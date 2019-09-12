@@ -9,12 +9,15 @@ $id_terminal = 1;
 
 	try {
 
-		$sql = "SELECT nome
-                , to_char(ts_inclusao, 'dd/mm/yyyy') as ts_inclusao_fmt
-                , fl_ativo
-                , id_cliente
-            FROM bel_cliente
-            ORDER BY ts_inclusao desc";
+		$sql = "SELECT u.nome
+                , to_char(u.ts_inclusao, 'dd/mm/yyyy') as ts_inclusao_fmt
+                , u.fl_ativo
+                , u.id_estacao
+                , c.nome as cliente
+            FROM bel_estacao u 
+               , bel_cliente c
+            WHERE u.id_cliente = c.id_cliente
+            ORDER BY u.ts_inclusao DESC";
 
 		    $result = $conn->query( $sql );
         $row   = $result->fetchAll();
@@ -22,9 +25,10 @@ $id_terminal = 1;
         foreach($row as $r){
           $td_cor .= "<tr>
                         <td>".$r['nome']."</td>
+                        <td>".$r['cliente']."</td>
                         <td>".$r['ts_inclusao_fmt']."</td>
                         <td>".$r['fl_ativo']."</td>
-                        <td><a href='/.php?id_cor=".$r['id_cliente']."'>Excluir</a></td>
+                        <td><a href='/.php?id_cor=".$r['id_estacao']."'>Excluir</a></td>
                       </tr>";
         }
         /*$nome_cor = $row['cor'];
@@ -35,7 +39,26 @@ $id_terminal = 1;
 	}
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
-	}
+    }
+        $sql = "SELECT id_cliente, nome 
+                FROM bel_cliente
+                WHERE fl_ativo = 'S'";
+
+        $result = $conn->query($sql);
+        $row = $result->fetchAll();
+
+        $option = "";
+
+        foreach($row as $r){
+            $option .= "<option value=".$r['id_cliente'].">".$r['nome']."</option>";
+
+        }
+
+    try{
+
+    }catch(PDOException $e){
+        $retorno->log .= "Error: " . $e->getMessage();
+    }
 
 
 /*========================================================================
@@ -384,7 +407,7 @@ $id_terminal = 1;
         <!-- Begin Page Content -->
         <div class="container-fluid">
           <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800 ">Cadastro de Cliente</h1>
+          <h1 class="h3 mb-2 text-gray-800 ">Cadastro de Estação</h1>
             <div class="col-lg-4">
 
               <div class="card shadow">
@@ -393,7 +416,13 @@ $id_terminal = 1;
                   <form class="" id="form1" name="form1" action="" method="post">
                       <div class="">
                         <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="clienteNome" name="clienteNome" placeholder="Nome Cliente">
+                          <input type="text" class="form-control mb-2 mr-sm-2" id="estacaoNome" name="estacaoNome" placeholder="Nome Estação">
+                        </div>
+                        <div class="col-lg-12">
+                          <select class="custom-select " id="selCliente" name="selCliente">
+                            <option selected>Selecione o Cliente</option>
+                            <?=$option;?>
+                          </select>
                         </div>
                         <div class="col-lg-12">
                           <input class="btn btn-success btn-lg btn-block" type="button" name="incluir" value="Incluir" id="incluir" />
@@ -410,7 +439,7 @@ $id_terminal = 1;
         <div class="container-fluid">
 
           <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800">Clientes Cadastrados</h1>
+          <h1 class="h3 mb-2 text-gray-800">Estações Cadastradas</h1>
           <p class="mb-4"></p>
 
           <!-- DataTales Example -->
@@ -425,6 +454,7 @@ $id_terminal = 1;
                   <thead>
                     <tr>
                       <th>Nome</th>
+                      <th>Cliente</th>
                       <th>Data Criação</th>
                       <th>Ativo</th>
                       <th>Ação</th>
@@ -513,13 +543,13 @@ $id_terminal = 1;
             $.ajax({
                 type: 'POST',
                 dataType: 'json',
-                url: 'insert-client.php',
+                url: 'insert-station.php',
                 async: true,
                 data: dados,
                 success: function(data) {
                   alert('Dados enviados com sucesso!');
                     //location.reload();
-                    location.href = 'register-client.php';
+                    location.href = 'register-station.php';
                 },
                 error: function(data) {
                     alert('Dados não enviados!');
