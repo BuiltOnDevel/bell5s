@@ -4,7 +4,7 @@
  $senha = $_POST['senhaUsuario'];
  $usuario = $_POST['nomeUsuario'];
  
- 
+
 
 
   try{
@@ -28,7 +28,7 @@
 	        header('Location: index.php');
 	        exit();
         }
-        }
+        
 	}
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
