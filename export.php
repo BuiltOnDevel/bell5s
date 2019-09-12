@@ -8,41 +8,22 @@ $dt_termino = $_POST['dtTermino'];
 echo "-->".$dt_termino;
 
 exit;
-
-
-$sql = "select 
-		id_mensagem as id
-		, mensagem
-		, to_char( inclusao_ts, 'dd/mm/yyyy hh24:mi:ss' ) as horario_fmt 
-		, cliente, unidade, estacao
-		, terminal_botao
-		, terminal_name
-		from bel_mensagem 
-		where st_mensagem = 'PENDENTE'
-		and inclusao_ts between ".$dt_inicio." and ". $dt_termino ." 
-		and unidade_id = ".$id_unidade."
-		"; */
-	$sql = " select 
-		id_mensagem as id
-		, mensagem
-		, to_char( inclusao_ts, 'dd/mm/yyyy hh24:mi:ss' ) as horario_fmt 
-		, cliente, unidade, estacao
-		, terminal_botao
-		, terminal_name
-		, terminal_motivo
-		from bel_mensagem 
-		where st_mensagem = 'PENDENTE'
-		order by 1 desc";
+*/
+	$sql = " SELECT id_chamado, cliente, terminal
+	              , ts_abertura_fmt, ts_atendimento_fmt
+				  , intervalo_tm, dt_abertura_fmt
+				  , dt_atendimento_fmt, terminal_motivo
+	          FROM bel_chamado_export";
 
       $result = $conn->query($sql);
       $rows = $result->fetchAll();
     
-      $content = "Horario;Cliente;Local;Estacao;Mensagem;Dispositivo;Botao;Motivo \n";
+      $content = "Cliente;Estacao;Motivo;Data Chamada/Horario Chamada;Data Atendimento/Horario Atendimento;Intervalor \n";
       header("Content-type: text/csv");
 	  header("Content-Disposition: attachment; filename=".date('dmY_his')."_export.csv");
       foreach($rows as $row){
-        $content .= $row['horario_fmt'].";".$row['cliente'].";".$row['unidade'];
-        $content .= $row['estacao'].";".$row['id'].";".$row['terminal_name'].";".$row['terminal_botao'].$row['terminal_motivo']."\n";      
+        $content .= $row['cliente'].";".$row['terminal'].";".$row['terminal_motivo'].";".$row['ts_abertura_fmt'].";".$row['ts_atendimento_fmt'].";".$row['intervalo_tm']."\n";;
+             
       }
 		print $content;      
      

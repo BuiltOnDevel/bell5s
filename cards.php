@@ -52,7 +52,7 @@ $retorno = "";
                 }
                 $print .= '
                     <div class="card shadow mb-1 col-sm-3">
-                        <div class="card-body '.$r['cor_fundo'].' text-white text-center">
+                        <div class="card-body text-white text-center" style="background-color: '.$r['cor_fundo'].' !important;">
                             '.$r['nome'].'
                             <a href="update-terminais.php?id='.$r['id_terminal'].'">
                                <img src="img/svg/issue-reopened.svg">
@@ -145,10 +145,11 @@ $retorno->log = '';
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <!--<h6 class="collapse-header">Custom Components:</h6>-->
             <a class="collapse-item" href="tables.php">Tabela</a>
+            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
             <a class="collapse-item" href="cards.php">Painel</a>
-            <a class="collapse-item" href="#">Terminais</a>
+            <a class="collapse-item" href="register-terminais.php">Terminais</a>
+            <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
             <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
           </div>
         </div>

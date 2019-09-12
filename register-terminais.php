@@ -9,28 +9,19 @@ $id_terminal = 1;
 
 	try {
 
-		$sql = " select
-        nome
-        , botao_ativar_cor
-        , botao_desativar_cor
-        , terminal_nr
-        from bel_terminal
-        where id_terminal = $id_terminal
-          and ult_botao is not null
-        order by nome";
-
+		$sql = "SELECT id_cores_terminal, cor, codigo, ts_created
+    FROM bel_cores_terminal";
+        $select = "";
 		    $result = $conn->query( $sql );
-        $row   = $result->fetch();
-
-        $nome = $row['nome'];
-        $btn_ativo = $row['botao_ativar_cor'];
-        $btn_inativo = $row['botao_desativar_cor'];
-        $terminal_nr = $row['terminal_nr'];
-
+        $row   = $result->fetchAll();
+        foreach($row as $r){
+          $select .= "<option value='".$r['codigo']."'>".$r['cor']."</option>";
+        }
+      
 	}
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
-	}
+	} 
 
 
 /*========================================================================
@@ -388,9 +379,6 @@ $id_terminal = 1;
                   <form class="" id="form1" name="form1" action="" method="post">
                       <div class="">
                         <div class="col-lg-12">
-                         <h6 class="h6 text-gray-800 bold">Número Terminal: <?=$terminal_nr;?></h6>
-                        </div>
-                        <div class="col-lg-12">
                           <input type="hidden" id="id" name="id" value="<?=$id_terminal;?>">
                         </div>
                         <div class="col-lg-12">
@@ -398,19 +386,13 @@ $id_terminal = 1;
                           <input type="text" class="form-control mb-2 mr-sm-2" id="nrTerminal" name="nrTerminal" placeholder="Número Terminal">
                             <select class="custom-select >" id="selAtivoCor" name= "selAtivoCor">
                               <option selected>Selecione Cor Ativa</option>
-                              <option value="bg-success">Verde</option>
-                              <option value="bg-danger">Vermelho</option>
-                              <option value="bg-warning">Amarelo</option>
-                              <option value="bg-dark">Preto</option>
+                              <?=$select;?>
                             </select>
                         </div>
                         <div class="col-lg-12">
                             <select class="custom-select " id="selInativoCor" name="selInativoCor">
                               <option selected >Selecione Cor Inativa</option>
-                              <option value="bg-success">Verde</option>
-                              <option value="bg-danger">Vermelho</option>
-                              <option value="bg-warning">Amarelo</option>
-                              <option value="bg-dark">Preto</option>
+                              <?=$select;?>
                             </select>
                         </div>
                         <div class="col-lg-12">

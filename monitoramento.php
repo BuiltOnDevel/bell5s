@@ -154,7 +154,7 @@ foreach( $estacoes as $e ){
 	{
 	      $print .= "
 	          <div class='card shadow mb-1 col-sm-3'>
-	              <div class='card-body " . $i->cor . " text-white text-center'>
+	              <div class='card-body text-white text-center' style='background-color:" . $i->cor . " !important; '>
                     Nome:" . $i->nome . " <br>
                     Nr:" . $i->terminal . " <br>
                     Horario:". $i->ultimo_att ."

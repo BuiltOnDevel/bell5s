@@ -30,7 +30,26 @@ $id_terminal = $_GET['id'];
 	}
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
+  }
+  
+
+  try {
+
+		$sql = "SELECT id_cores_terminal, cor, codigo, ts_created
+    FROM bel_cores_terminal";
+        $select = "";
+		    $result = $conn->query( $sql );
+        $row   = $result->fetchAll();
+        foreach($row as $r){
+          $select .= "<option value='".$r['codigo']."'>".$r['cor']."</option>";
+        }
+      
 	}
+	catch(PDOException $e) {
+	    $retorno->log .= "Error: " . $e->getMessage();
+	} 
+
+
 
 
 /*========================================================================
@@ -397,19 +416,13 @@ $id_terminal = $_GET['id'];
                           <input type="text" class="form-control mb-2 mr-sm-2" id="nome" name="nome" placeholder="Nome Terminal" value="<?=$nome;?>">
                             <select class="custom-select >" id="selAtivoCor" name= "selAtivoCor">
                               <option selected>Selecione Cor Ativa</option>
-                              <option value="bg-success">Verde</option>
-                              <option value="bg-danger">Vermelho</option>
-                              <option value="bg-warning">Amarelo</option>
-                              <option value="bg-dark">Preto</option>
+                              <?=$select;?>
                             </select>
                         </div>
                         <div class="col-lg-12">
                             <select class="custom-select " id="selInativoCor" name="selInativoCor">
                               <option selected >Selecione Cor Inativa</option>
-                              <option value="bg-success">Verde</option>
-                              <option value="bg-danger">Vermelho</option>
-                              <option value="bg-warning">Amarelo</option>
-                              <option value="bg-dark">Preto</option>
+                              <?=$select;?>
                             </select>
                         </div>
                         <div class="col-lg-12">
