@@ -5,76 +5,183 @@
 header("Access-Control-Allow-Origin: *");
 include("./json/default.php");
 include("./php/conexao.php");
-include("validate-login.php");
-$id_terminal = 1;
+// header("Refresh:3");
+
+/*============================================================
+           PARAMETROS
+============================================================*/
+$id_cliente_p = 2; // parametro a ser recebido
+
+
+/*============================================================
+           LER CLIENTE
+============================================================*/
+$urlLogoCliente = '';
+
+try{
+	
+
+		
+		$sql = " 
+		select url_logo
+ 		from bel_cliente
+		where id_cliente = " . $id_cliente_p ;
+
+    
+	  $result = $conn->query( $sql );
+	  $rows   = $result->fetchAll();
+	  
+		foreach( $rows as $r)
+		{
+      $urlLogoCliente = $r['url_logo'];
+    } // fim de foreach
+}
+catch(PDOException $e) {
+    $retorno->log .= "Error: " . $e->getMessage();
+}
+	
+	
+	/*============================================================
+	           LER ESTACOES
+	============================================================*/
+
+class Estacao{
+	public $nome = '';
+	public $id = 0;
+	public $itens = array();
+}
+
+
+$estacoes = array(); // lista das estacoes para realizar quebra
 
 	try {
+		
+		$sql = " 
+		select estacao, estacao_id, count(1) as linhas
+ 		from bel_monitoramento_vw
+		where cliente_id = " . $id_cliente_p . "
+		  and id_tipo = 1
+		group by estacao, estacao_id
+		order by 1";
 
-		$sql = "SELECT u.nome
-                , to_char(u.ts_inclusao, 'dd/mm/yyyy') as ts_inclusao_fmt
-                , u.fl_ativo
-                , u.id_usuario
-                , c.nome as cliente
-                , u.email
-                , u.login
-            FROM bel_usuario u 
-               , bel_cliente c
-            WHERE u.id_cliente = c.id_cliente
-            ORDER BY u.ts_inclusao DESC";
-
-		    $result = $conn->query( $sql );
-        $row   = $result->fetchAll();
-        $td_cor = "";
-        foreach($row as $r){
-          $td_cor .= "<tr>
-                        <td>".$r['nome']."</td>
-                        <td>".$r['cliente']."</td>
-                        <td>".$r['login']."</td>
-                        <td>".$r['email']."</td>
-                        <td>".$r['ts_inclusao_fmt']."</td>
-                        <td>".$r['fl_ativo']."</td>
-                        <td>
-                            <a href='/.php?id_cor=".$r['id_usuario']."'>Excluir</a> /
-                            <a href='/.php?id_cor=".$r['id_usuario']."'>Trocar Senha</a>
-                        </td>
-                      </tr>";
-        }
-        /*$nome_cor = $row['cor'];
-        $id_cor = $row['id_cores_terminal'];
-        $codigo = $row['codigo'];
-        $fl_ativo = $row['fl_ativo'];*/
+    
+	  $result = $conn->query( $sql );
+	  $rows   = $result->fetchAll();
+	  
+		foreach( $rows as $r)
+		{
+			$e = new Estacao();
+			$e->nome = $r['estacao'];
+			$e->id = $r['estacao_id'];
+			
+			$estacoes[] = $e;
+		}
 
 	}
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
-    }
-        $sql = "SELECT id_cliente, nome 
-                FROM bel_cliente
-                WHERE fl_ativo = 'S'";
+	}
+	
 
-        $result = $conn->query($sql);
-        $row = $result->fetchAll();
-
-        $option = "";
-
-        foreach($row as $r){
-            $option .= "<option value=".$r['id_cliente'].">".$r['nome']."</option>";
-
-        }
-
-    try{
-
-    }catch(PDOException $e){
-        $retorno->log .= "Error: " . $e->getMessage();
-    }
+	
+	/*============================================================
+	           LER DETALHES
+	============================================================*/
+class Terminal{
+	public $nome = '';
+  public $cor = '';
+  public $id = '';
+}
 
 
-/*========================================================================
-                    RETORNO AO CLIENTE
-========================================================================*/
+foreach( $estacoes as $e ){
+	try {
+		
+		$sql = " 
+		select terminal, terminal_id
+         , cor_fundo, terminal_nr
+         , ult_botao_ts
+         , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
+		from bel_monitoramento_vw
+		where cliente_id = " . $id_cliente_p . "
+		  and estacao_id = " . $e->id . "
+		order by terminal";
+		
+		 //print( $sql );
+		 //exit;
 
-#$retorno->log = '';
-//print( json_encode( $retorno ) );
+	  $result = $conn->query( $sql );
+	  $rows   = $result->fetchAll();
+	  foreach( $rows as $r )
+	  {
+	  	$t = new Terminal();
+	  	$t->nome = $r['terminal'] . " - " . $r['cor_status'] ;
+	  	$t->cor = $r['cor_status'];
+      $t->id = $r['terminal_id'];
+      $t->terminal = $r['terminal_nr'];
+      $t->ultimo_att = substr($r['ult_botao_ts'],11);
+
+	  	$e->itens[] = $t;
+	  	
+	  } // leitura de cursor
+
+
+	} // fim de try
+	catch(PDOException $e) {
+	    $retorno->log .= "Error: " . $e->getMessage();
+	}  	
+} // ler estacoes
+
+
+
+// FORMATAR LINHAS HTML
+//=====================================
+$print = '';
+
+foreach( $estacoes as $e ){
+	
+	$print .= '<div class="container-fluid">'; // div fluid
+		
+	$print .= "        	
+	<!-- Page Heading -->
+	<h1 class='h3 mb-2 text-gray-800 '> " . $e->nome . " </h1>
+	<p class='mb-4'></p>
+	";
+	
+	// ------------------------------------------------------
+	
+	$print .= '<div class="row">';
+	
+	foreach( $e->itens as $i )
+	{
+	      $print .= "
+	          <div class='card shadow mb-1 col-sm-3'>
+	              <div class='card-body text-white text-center' style='background-color:" . $i->cor . ";'>
+                " . $i->nome . "(" . $i->id . ")
+                 <a href='update-terminais.php?id=" . $i->id . "'> 
+                    <img src='img/svg/issue-reopened.svg'>
+                 </a>
+	              </div>
+	          </div>
+	        ";
+		
+	}
+	$print .= "</div>";	
+	// ------------------------------------------------------
+	           
+	$print .= '</div>'; // div fluid - fim
+		
+	
+} // FIM ESTACOES
+
+
+// IMPRIMIR
+//=====================================
+
+	
+
+
+
 
 ?>
 
@@ -109,9 +216,9 @@ $id_terminal = 1;
     <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
       <!-- Sidebar - Brand -->
-      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
+      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
         <div class="sidebar-brand-text mx-3">
-            <img src="img/logo.png" alter="logo" height="55" width="75">
+            <img src="<?=$urlLogoCliente; ?>" alter="logo" height="55" width="75">
         </div>
       </a>
 
@@ -120,7 +227,7 @@ $id_terminal = 1;
 
       <!-- Nav Item - Dashboard -->
       <li class="nav-item">
-        <a class="nav-link" href="index.php">
+        <a class="nav-link" href="index.html">
           <i class="fas fa-fw fa-tachometer-alt"></i>
           <span>Dashboard</span></a>
       </li>
@@ -137,16 +244,16 @@ $id_terminal = 1;
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
           <i class="fas fa-fw fa-cog"></i>
-          <span>Cadastros</span>
+          <span>Cadastro</span>
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" href="tables.php">Tabela</a>
+            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
+            <a class="collapse-item" href="cards.php">Painel</a>
             <a class="collapse-item" href="register-terminais.php">Terminais</a>
             <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
-            <a class="collapse-item" href="register-client.php">Cliente</a>
-            <a class="collapse-item" href="register-unit.php">Unidade</a>
-            <a class="collapse-item" href="register-station.php">Estação</a>
-            <a class="collapse-item" href="register-user.php">Usuário</a>
+            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
           </div>
         </div>
       </li>
@@ -155,19 +262,21 @@ $id_terminal = 1;
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
           <i class="fas fa-fw fa-wrench"></i>
-          <span>Monitoração</span>
+          <span>Utilities</span>
         </a>
         <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="cards.php">Painel</a>
-            <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
-            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
+            <h6 class="collapse-header">Custom Utilities:</h6>
+            <a class="collapse-item" href="utilities-color.html">Colors</a>
+            <a class="collapse-item" href="utilities-border.html">Borders</a>
+            <a class="collapse-item" href="utilities-animation.html">Animations</a>
+            <a class="collapse-item" href="utilities-other.html">Other</a>
           </div>
         </div>
       </li>
-       <!-- Divider -->
-       <hr class="sidebar-divider">
+
+      <!-- Divider -->
+      <hr class="sidebar-divider">
 
       <!-- Heading -->
       <!--
@@ -212,7 +321,7 @@ $id_terminal = 1;
           <span>Tables</span></a>
       </li>
        -->
-      <!-- Divider
+      <!-- Divider 
       <hr class="sidebar-divider d-none d-md-block">
          -->
       <!-- Sidebar Toggler (Sidebar) -->
@@ -410,87 +519,9 @@ $id_terminal = 1;
         </nav>
         <!-- End of Topbar -->
 
-        <!-- Begin Page Content -->
-        <div class="container-fluid">
-          <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800 ">Cadastro de Usuário</h1>
-            <div class="col-lg-4">
 
-              <div class="card shadow">
-                <div class="card-body ">
-                  <!-- Nested Row within Card Body -->
-                  <form class="" id="form1" name="form1" action="" method="post">
-                      <div class="">
-                        <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="usuarioNome" name="usuarioNome" placeholder="Nome do Usuário">
-                        </div>
-                        <div class="col-lg-12">
-                          <input type="email" class="form-control mb-2 mr-sm-2" id="usuarioEmail" name="usuarioEmail" placeholder="Email do usuário">
-                        </div>
-                        <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="loginUsuario" name="usuarioLogin" placeholder="Login do usuário">
-                        </div>
-                        <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="senhaUsuario" name="usuarioSenha" placeholder="Senha do usuário">
-                        </div>
-                        <div class="col-lg-12">
-                          <select class="custom-select " id="selCliente" name="selCliente">
-                            <option selected>Selecione o Cliente</option>
-                            <?=$option;?>
-                          </select>
-                        </div>
-                        <div class="col-lg-12">
-                          <input class="btn btn-success btn-lg btn-block" type="button" name="incluir" value="Incluir" id="incluir" />
-                        </div>
-                      </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-        </div>
-          <!-- sidebar-divider Content -->
-        <hr class="sidebar-divider">
-          <!-- Begin Page Content -->
-        <div class="container-fluid">
+            <?=$print; ?>
 
-          <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800">Usuários Cadastrados</h1>
-          <p class="mb-4"></p>
-
-          <!-- DataTales Example -->
-          <div class="card shadow mb-4">
-            <div class="card-header py-3">
-              <h6 class="m-0 font-weight-bold text-primary">Lista</h6>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                	
-                  <thead>
-                    <tr>
-                      <th>Nome</th>
-                      <th>Cliente</th>
-                      <th>Login</th>
-                      <th>Email</th>
-                      <th>Data Criação</th>
-                      <th>Ativo</th>
-                      <th>Ação</th>
-                    </tr>
-                      <?=$td_cor;?>
-                  </thead>
-                  <!-- DATA -->
-                </table>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <!-- /.container-fluid -->
-
-      </div>
-      <!-- End of Main Content -->
-
-      <!-- End of Main Content -->
 
       <!-- Footer -->
       <footer class="sticky-footer bg-white">
@@ -523,23 +554,21 @@ $id_terminal = 1;
             <span aria-hidden="true">×</span>
           </button>
         </div>
-        <div class="modal-body">Você quer mesmo fazer Logout?</div>
+        <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
-          <a class="btn btn-primary" href="logout.php">Logout</a>
+          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+          <a class="btn btn-primary" href="login.html">Logout</a>
         </div>
       </div>
     </div>
   </div>
-
 
   <!-- Bootstrap core JavaScript-->
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
   <!-- Core plugin JavaScript-->
-  <!--<script src="vendor/jquery-easing/jquery.easing.min.js"></script>-->
-
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
 
   <!-- Custom scripts for all pages-->
   <script src="js/sb-admin-2.min.js"></script>
@@ -550,34 +579,9 @@ $id_terminal = 1;
 
   <!-- Page level custom scripts -->
   <!-- script src="js/demo/datatables-demo.js"></script -->
+  
 
-<script type="text/javascript" language="javascript">
-   $(document).ready(function() {
-        /// Quando usuário clicar em salvar será feito todos os passo abaixo
-        $('#incluir').click(function() {
 
-            var dados = $('#form1').serialize();
-            $.ajax({
-                type: 'POST',
-                dataType: 'json',
-                url: 'insert-user.php',
-                async: true,
-                data: dados,
-                success: function(data) {
-                  alert('Dados enviados com sucesso!');
-                    //location.reload();
-                    location.href = 'register-user.php';
-                },
-                error: function(data) {
-                    alert('Dados não enviados!');
-                    location.href = 'register-user.php';
-                }
-            });
-
-            return false;
-        });
-    });
-    </script>
 </body>
 
 </html>
