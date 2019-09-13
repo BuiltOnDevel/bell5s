@@ -2,6 +2,12 @@
 <html lang="en">
 
 <head>
+<?php
+     header("Access-Control-Allow-Origin: *");
+     include("./json/default.php");
+     include("./php/conexao.php");
+     include("validate-login.php");
+  ?>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

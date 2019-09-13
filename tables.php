@@ -5,7 +5,7 @@
 header("Access-Control-Allow-Origin: *");
 include("./json/default.php");
 include("./php/conexao.php");
-
+include("validate-login.php");
 
 class Registro{
  public $horario = 0;

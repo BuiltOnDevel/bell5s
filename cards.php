@@ -5,6 +5,7 @@
 header("Access-Control-Allow-Origin: *");
 include("./json/default.php");
 include("./php/conexao.php");
+include("validate-login.php");
 header("Refresh:3");
 
 class Registro{

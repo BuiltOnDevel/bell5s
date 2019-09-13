@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 
 <head>
 
@@ -39,7 +39,7 @@
                   <div class="text-center">
                     <h1 class="h4 text-gray-900 mb-4">Bem vindo !</h1>
                   </div>
-                  <form class="user" id="form1" name="form1" action="" method="post">
+                  <form class="user" id="form1" name="form1" action="start-login.php" method="post">
                     <div class="form-group">
                       <input type="text" class="form-control form-control-user" id="nomeUsuario" name="nomeUsuario"  placeholder="Digite o nome do usuário...">
                     </div>
@@ -52,7 +52,8 @@
                         <label class="custom-control-label" for="customCheck">Lembre-me !</label>
                       </div>
                     </div>
-                    <input class="btn btn-success btn-lg btn-block" type="button" name="login" value="Login" id="login" />
+                    <!--<input class="btn btn-success btn-lg btn-block" type="submit" name="login" value="Login" id="login" />-->
+                    <button class="btn btn-success btn-lg btn-block" type="submit">Login</button>
                   </form>
                   <hr>
                   <div class="text-center">
@@ -85,30 +86,5 @@
 
 </body>
 
-<script type="text/javascript" language="javascript">
-   $(document).ready(function() {
-        /// Quando usuário clicar em salvar será feito todos os passo abaixo
-        $('#login').click(function() {
-
-            var dados = $('#form1').serialize();
-            $.ajax({
-                type: 'post',
-                dataType: 'json',
-                url: 'start-login.php',
-                data: dados,
-                success: function(data) {
-                  alert('Dados enviados com sucesso!');
-                    //location.reload();
-                    location.href = 'register-station.php';
-                },
-                error: function(data) {
-                    alert('Dados não enviados!');
-                }
-            });
-
-            return false;
-        });
-    });
-    </script>
 
 </html>

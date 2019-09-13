@@ -2,9 +2,12 @@
 <html lang="en">
 
 <?php
+
 header("Access-Control-Allow-Origin: *");
 include("./json/default.php");
 include("./php/conexao.php");
+include("validate-login.php");
+
 $id_terminal = 1;
 
 	try {
