@@ -6,83 +6,75 @@ header("Access-Control-Allow-Origin: *");
 include("./json/default.php");
 include("./php/conexao.php");
 include("validate-login.php");
+$id_terminal = 1;
 
-class Registro{
- public $horario = 0;
- public $cliente    = 'CLIENTE';
- public $local = 'LOCAL';
- public $estacao = 'ESTACAO';
- public $mensagem = '';
- public $obs = 'OBS';
-}
-
-
-$reg = new Registro();
-$print = "";
-$retorno = "";
-
-
-
-	/*============================================================
-	           LER A
-	============================================================*/
-	
 	try {
-		
-		$sql = " select 
-		id_mensagem as id
-		, mensagem
-		, to_char( inclusao_ts, 'dd/mm/yyyy hh24:mi:ss' ) as horario_fmt 
-		, cliente, unidade, estacao
-		, terminal_botao
-    , terminal_name
-    , terminal_motivo
-		from bel_mensagem 
-		where st_mensagem = 'PENDENTE'
-		order by 1 desc";
-		
 
-		    
-		#$retorno->log .= $sql;
-		
-	  $result = $conn->query( $sql );
-	  $rows   = $result->fetchAll();
-	  
-	  $print .= "<tbody>";
-		foreach( $rows as $r)
-		{
-				  $print .= "<tr>";
-				  $print .= "<td>" . $r['horario_fmt'] . "</td>";
-				  $print .= "<td>" . $r['cliente'] . "&nbsp;</td>";
-				  $print .= "<td>" . $r['unidade'] . "&nbsp;</td>";
-				  $print .= "<td>" . $r['estacao'] . "&nbsp;</td>";
-				  $print .= "<td>" . $r['id'] . "</td>";
-				  $print .= "<td>" . $r['terminal_name'] . "</td>";
-          $print .= "<td>" . $r['terminal_botao'] . "</td>";
-          $print .= "<td>" . $r['terminal_motivo'] . "</td>";
-				  $print .= "</tr>";
+		$sql = "SELECT u.nome
+                , to_char(u.ts_inclusao, 'dd/mm/yyyy') as ts_inclusao_fmt
+                , u.fl_ativo
+                , u.id_usuario
+                , c.nome as cliente
+                , u.email
+                , u.login
+            FROM bel_usuario u 
+               , bel_cliente c
+            WHERE u.id_cliente = c.id_cliente
+            ORDER BY u.ts_inclusao DESC";
 
-			
-			$retorno->itens[] = $reg;
-		}	
-	  $print .= "</tbody>";
-	
-	
-	
+		    $result = $conn->query( $sql );
+        $row   = $result->fetchAll();
+        $td_cor = "";
+        foreach($row as $r){
+          $td_cor .= "<tr>
+                        <td>".$r['nome']."</td>
+                        <td>".$r['cliente']."</td>
+                        <td>".$r['login']."</td>
+                        <td>".$r['email']."</td>
+                        <td>".$r['ts_inclusao_fmt']."</td>
+                        <td>".$r['fl_ativo']."</td>
+                        <td>
+                            <a href='/.php?id_cor=".$r['id_usuario']."'>Excluir</a> /
+                            <a href='/.php?id_cor=".$r['id_usuario']."'>Trocar Senha</a>
+                        </td>
+                      </tr>";
+        }
+        /*$nome_cor = $row['cor'];
+        $id_cor = $row['id_cores_terminal'];
+        $codigo = $row['codigo'];
+        $fl_ativo = $row['fl_ativo'];*/
+
 	}
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
-	}
-	
-	
+    }
+        $sql = "SELECT id_cliente, nome 
+                FROM bel_cliente
+                WHERE fl_ativo = 'S'";
+
+        $result = $conn->query($sql);
+        $row = $result->fetchAll();
+
+        $option = "";
+
+        foreach($row as $r){
+            $option .= "<option value=".$r['id_cliente'].">".$r['nome']."</option>";
+
+        }
+
+    try{
+
+    }catch(PDOException $e){
+        $retorno->log .= "Error: " . $e->getMessage();
+    }
+
+
 /*========================================================================
                     RETORNO AO CLIENTE
 ========================================================================*/
 
-$retorno->log = '';
+#$retorno->log = '';
 //print( json_encode( $retorno ) );
-
-
 
 ?>
 
@@ -220,7 +212,7 @@ $retorno->log = '';
           <span>Tables</span></a>
       </li>
        -->
-      <!-- Divider 
+      <!-- Divider
       <hr class="sidebar-divider d-none d-md-block">
          -->
       <!-- Sidebar Toggler (Sidebar) -->
@@ -414,23 +406,61 @@ $retorno->log = '';
                 </a>
               </div>
             </li>
-
           </ul>
-
         </nav>
         <!-- End of Topbar -->
 
         <!-- Begin Page Content -->
         <div class="container-fluid">
+          <!-- Page Heading -->
+          <h1 class="h3 mb-2 text-gray-800 ">Cadastro de Usuário</h1>
+            <div class="col-lg-4">
+
+              <div class="card shadow">
+                <div class="card-body ">
+                  <!-- Nested Row within Card Body -->
+                  <form class="" id="form1" name="form1" action="" method="post">
+                      <div class="">
+                        <div class="col-lg-12">
+                          <input type="text" class="form-control mb-2 mr-sm-2" id="usuarioNome" name="usuarioNome" placeholder="Nome do Usuário">
+                        </div>
+                        <div class="col-lg-12">
+                          <input type="email" class="form-control mb-2 mr-sm-2" id="usuarioEmail" name="usuarioEmail" placeholder="Email do usuário">
+                        </div>
+                        <div class="col-lg-12">
+                          <input type="text" class="form-control mb-2 mr-sm-2" id="loginUsuario" name="loginUsuario" placeholder="Login do usuário">
+                        </div>
+                        <div class="col-lg-12">
+                          <input type="text" class="form-control mb-2 mr-sm-2" id="senhaUsuario" name="senhaUsuario" placeholder="Senha do usuário">
+                        </div>
+                        <div class="col-lg-12">
+                          <select class="custom-select " id="selCliente" name="selCliente">
+                            <option selected>Selecione o Cliente</option>
+                            <?=$option;?>
+                          </select>
+                        </div>
+                        <div class="col-lg-12">
+                          <input class="btn btn-success btn-lg btn-block" type="button" name="incluir" value="Incluir" id="incluir" />
+                        </div>
+                      </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+        </div>
+          <!-- sidebar-divider Content -->
+        <hr class="sidebar-divider">
+          <!-- Begin Page Content -->
+        <div class="container-fluid">
 
           <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800">Mensagens</h1>
+          <h1 class="h3 mb-2 text-gray-800">Usuários Cadastrados</h1>
           <p class="mb-4"></p>
 
           <!-- DataTales Example -->
           <div class="card shadow mb-4">
             <div class="card-header py-3">
-              <h6 class="m-0 font-weight-bold text-primary">Mensagens Recebidas</h6>
+              <h6 class="m-0 font-weight-bold text-primary">Lista</h6>
             </div>
             <div class="card-body">
               <div class="table-responsive">
@@ -438,32 +468,17 @@ $retorno->log = '';
                 	
                   <thead>
                     <tr>
-                      <th>Horario</th>
+                      <th>Nome</th>
                       <th>Cliente</th>
-                      <th>Local</th>
-                      <th>Estacao</th>
-                      <th>Mensagem</th>
-                      <th>Dispositivo</th>
-                      <th>Botao</th>
-                      <th>Motivo</th>
+                      <th>Login</th>
+                      <th>Email</th>
+                      <th>Data Criação</th>
+                      <th>Ativo</th>
+                      <th>Ação</th>
                     </tr>
+                      <?=$td_cor;?>
                   </thead>
-                  
-                  <tfoot>
-                    <tr>
-                      <th>Horario</th>
-                      <th>Cliente</th>
-                      <th>Local</th>
-                      <th>Estacao</th>
-                      <th>Mensagem</th>
-                      <th>Dispositivo</th>
-                      <th>Botao</th>
-                      <th>Motivo</th>
-                    </tr>
-                  </tfoot>
-                  
-<?=$print; ?>
-                  
+                  <!-- DATA -->
                 </table>
               </div>
             </div>
@@ -473,6 +488,8 @@ $retorno->log = '';
         <!-- /.container-fluid -->
 
       </div>
+      <!-- End of Main Content -->
+
       <!-- End of Main Content -->
 
       <!-- Footer -->
@@ -515,12 +532,14 @@ $retorno->log = '';
     </div>
   </div>
 
+
   <!-- Bootstrap core JavaScript-->
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
   <!-- Core plugin JavaScript-->
-  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+  <!--<script src="vendor/jquery-easing/jquery.easing.min.js"></script>-->
+
 
   <!-- Custom scripts for all pages-->
   <script src="js/sb-admin-2.min.js"></script>
@@ -531,9 +550,33 @@ $retorno->log = '';
 
   <!-- Page level custom scripts -->
   <!-- script src="js/demo/datatables-demo.js"></script -->
-  
 
+<script type="text/javascript" language="javascript">
+   $(document).ready(function() {
+        /// Quando usuário clicar em salvar será feito todos os passo abaixo
+        $('#incluir').click(function() {
 
+            var dados = $('#form1').serialize();
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                url: 'insert-user.php',
+                async: true,
+                data: dados,
+                success: function(data) {
+                  alert('Dados enviados com sucesso!');
+                    //location.reload();
+                    location.href = 'register-user.php';
+                },
+                error: function(data) {
+                    alert('Dados não enviados!');
+                }
+            });
+
+            return false;
+        });
+    });
+    </script>
 </body>
 
 </html>

@@ -115,16 +115,16 @@ $retorno->log = '';
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
           <i class="fas fa-fw fa-cog"></i>
-          <span>Components</span>
+          <span>Cadastros</span>
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
-            <a class="collapse-item" href="cards.php">Painel</a>
             <a class="collapse-item" href="register-terminais.php">Terminais</a>
             <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
-            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
+            <a class="collapse-item" href="register-client.php">Cliente</a>
+            <a class="collapse-item" href="register-unit.php">Unidade</a>
+            <a class="collapse-item" href="register-station.php">Estação</a>
+            <a class="collapse-item" href="register-user.php">Usuário</a>
           </div>
         </div>
       </li>
@@ -133,21 +133,19 @@ $retorno->log = '';
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
           <i class="fas fa-fw fa-wrench"></i>
-          <span>Utilities</span>
+          <span>Monitoração</span>
         </a>
         <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <h6 class="collapse-header">Custom Utilities:</h6>
-            <a class="collapse-item" href="utilities-color.html">Colors</a>
-            <a class="collapse-item" href="utilities-border.html">Borders</a>
-            <a class="collapse-item" href="utilities-animation.html">Animations</a>
-            <a class="collapse-item" href="utilities-other.html">Other</a>
+            <a class="collapse-item" href="cards.php">Painel</a>
+            <a class="collapse-item" href="tables.php">Tabela</a>
+            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
+            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
           </div>
         </div>
       </li>
-
-      <!-- Divider -->
-      <hr class="sidebar-divider">
+       <!-- Divider -->
+       <hr class="sidebar-divider">
 
       <!-- Heading -->
       <div class="sidebar-heading">
