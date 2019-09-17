@@ -7,51 +7,44 @@ include("./json/default.php");
 include("./php/conexao.php");
 include("validate-login.php");
 
-$id_terminal = $_GET['id'];
-
+$id = $_GET['id']; 
 	try {
 
-		$sql = " select
-        nome
-        , botao_ativar_cor
-        , botao_desativar_cor
-        , terminal_nr
-        from bel_terminal
-        where id_terminal = $id_terminal
-          and ult_botao is not null
-        order by nome";
+        $sql = "SELECT nome, email, login, fl_ativo FROM bel_usuario
+               WHERE id_usuario = $id";
 
-		    $result = $conn->query( $sql );
+		$result = $conn->query( $sql );
         $row   = $result->fetch();
-
+       
+        
         $nome = $row['nome'];
-        $btn_ativo = $row['botao_ativar_cor'];
-        $btn_inativo = $row['botao_desativar_cor'];
-        $terminal_nr = $row['terminal_nr'];
+        $email = $row['email'];
+        $login = $row['login'];
+        $fl_ativo = $row['fl_ativo'];
 
 	}
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
-  }
-  
+    }
+        $sql = "SELECT id_cliente, nome 
+                FROM bel_cliente
+                WHERE fl_ativo = 'S'";
 
-  try {
+        $result = $conn->query($sql);
+        $row = $result->fetchAll();
 
-		$sql = "SELECT id_cores_terminal, cor, codigo, ts_created
-    FROM bel_cores_terminal";
-        $select = "";
-		    $result = $conn->query( $sql );
-        $row   = $result->fetchAll();
+        $option = "";
+
         foreach($row as $r){
-          $select .= "<option value='".$r['codigo']."'>".$r['cor']."</option>";
+            $option .= "<option value=".$r['id_cliente'].">".$r['nome']."</option>";
+
         }
-      
-	}
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-	} 
 
+    try{
 
+    }catch(PDOException $e){
+        $retorno->log .= "Error: " . $e->getMessage();
+    }
 
 
 /*========================================================================
@@ -127,7 +120,7 @@ $id_terminal = $_GET['id'];
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <a class="collapse-item" href="register-terminais.php">Terminais</a>
-          <!--<a class="collapse-item" href="register-color.php">Cor do Terminal</a> -->
+            <!--<a class="collapse-item" href="register-color.php">Cor do Terminal</a> -->
             <a class="collapse-item" href="register-client.php">Cliente</a>
             <a class="collapse-item" href="register-unit.php">Unidade</a>
             <a class="collapse-item" href="register-station.php">Estação</a>
@@ -398,7 +391,7 @@ $id_terminal = $_GET['id'];
         <!-- Begin Page Content -->
         <div class="container-fluid">
           <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800 ">Cadastro Terminal</h1>
+          <h1 class="h3 mb-2 text-gray-800 ">Cadastro de Usuário</h1>
             <div class="col-lg-4">
 
               <div class="card shadow">
@@ -406,28 +399,32 @@ $id_terminal = $_GET['id'];
                   <!-- Nested Row within Card Body -->
                   <form class="" id="form1" name="form1" action="" method="post">
                       <div class="">
-                        <div class="col-lg-12">
-                         <h6 class="h6 text-gray-800 bold">Número Terminal: <?=$terminal_nr;?></h6>
+                      <div class="col-lg-12">
+                          <input type="hidden" class="form-control mb-2 mr-sm-2" id="usuarioId" name="usuarioId" placeholder="Nome do Usuário" value="<?=$id;?>">
                         </div>
                         <div class="col-lg-12">
-                          <input type="hidden" id="id" name="id" value="<?=$id_terminal;?>">
+                          <input type="text" class="form-control mb-2 mr-sm-2" id="usuarioNome" name="usuarioNome" placeholder="Nome do Usuário" value="<?=$nome;?>">
                         </div>
                         <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="nome" name="nome" placeholder="Nome Terminal" value="<?=$nome;?>">
-                            <select class="custom-select >" id="selAtivoCor" name= "selAtivoCor">
-                              <option selected>Selecione Cor Ativa</option>
-                              <?=$select;?>
-                            </select>
+                          <input type="email" class="form-control mb-2 mr-sm-2" id="usuarioEmail" name="usuarioEmail" placeholder="Email do usuário" value="<?=$email;?>">
                         </div>
                         <div class="col-lg-12">
-                            <select class="custom-select " id="selInativoCor" name="selInativoCor">
-                              <option selected >Selecione Cor Inativa</option>
-                              <?=$select;?>
-                            </select>
+                          <input type="text" class="form-control mb-2 mr-sm-2" id="usuarioLogin" name="usuarioLogin" placeholder="Login do usuário" value="<?=$login;?>">
                         </div>
                         <div class="col-lg-12">
-                          <input class="btn btn-primary btn-lg btn-block" type="button" name="salvar" value="Salvar" id="salvar" />
-													<input class="btn btn-danger btn-lg btn-block" type="button" name="excluir" value="Excluir" id="excluir" />
+                              <select class="custom-select " id="selCliente" name="selAtivo">
+                                  <option value="S">Sim</option>
+                                  <option value="N">Não</option>
+                              </select> 
+                        </div>
+                        <div class="col-lg-12">
+                          <select class="custom-select " id="selCliente" name="selCliente">
+                            <option selected>Selecione o Cliente</option>
+                            <?=$option;?>
+                          </select>
+                        </div>
+                        <div class="col-lg-12">
+                          <input class="btn btn-success btn-lg btn-block" type="button" name="salvar" value="Salvar" id="salvar" />
                         </div>
                       </div>
                   </form>
@@ -435,6 +432,11 @@ $id_terminal = $_GET['id'];
               </div>
             </div>
         </div>
+          <!-- sidebar-divider Content -->
+        <hr class="sidebar-divider">
+
+      </div>
+      <!-- End of Main Content -->
 
       <!-- End of Main Content -->
 
@@ -506,43 +508,22 @@ $id_terminal = $_GET['id'];
             $.ajax({
                 type: 'POST',
                 dataType: 'json',
-                url: 'update.php',
+                url: 'update-user.php',
                 async: true,
                 data: dados,
                 success: function(data) {
                   alert('Dados enviados com sucesso!');
                     //location.reload();
-                    location.href = 'cards.php';
+                    location.href = 'register-user.php';
                 },
                 error: function(data) {
                     alert('Dados não enviados!');
+                    location.href = 'register-user.php';
                 }
             });
 
             return false;
         });
-
-				$('#excluir').click(function() {
-
-						var dados = $('#form1').serialize();
-						$.ajax({
-								type: 'POST',
-								dataType: 'json',
-								url: 'delete.php',
-								async: true,
-								data: dados,
-								success: function(data) {
-									alert('Dados excluido com sucesso!');
-										//location.reload();
-										location.href = 'cards.php';
-								},
-								error: function(data) {
-										alert('Falha ao excluir dados !');
-								}
-						});
-
-						return false;
-				});
     });
     </script>
 </body>

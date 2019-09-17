@@ -6,61 +6,9 @@ header("Access-Control-Allow-Origin: *");
 include("./json/default.php");
 include("./php/conexao.php");
 include("validate-login.php");
+$id_usuario = $_GET['id'];
 
-$id_terminal = $_GET['id'];
-
-	try {
-
-		$sql = " select
-        nome
-        , botao_ativar_cor
-        , botao_desativar_cor
-        , terminal_nr
-        from bel_terminal
-        where id_terminal = $id_terminal
-          and ult_botao is not null
-        order by nome";
-
-		    $result = $conn->query( $sql );
-        $row   = $result->fetch();
-
-        $nome = $row['nome'];
-        $btn_ativo = $row['botao_ativar_cor'];
-        $btn_inativo = $row['botao_desativar_cor'];
-        $terminal_nr = $row['terminal_nr'];
-
-	}
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-  }
-  
-
-  try {
-
-		$sql = "SELECT id_cores_terminal, cor, codigo, ts_created
-    FROM bel_cores_terminal";
-        $select = "";
-		    $result = $conn->query( $sql );
-        $row   = $result->fetchAll();
-        foreach($row as $r){
-          $select .= "<option value='".$r['codigo']."'>".$r['cor']."</option>";
-        }
-      
-	}
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-	} 
-
-
-
-
-/*========================================================================
-                    RETORNO AO CLIENTE
-========================================================================*/
-
-#$retorno->log = '';
-//print( json_encode( $retorno ) );
-
+	
 ?>
 
 <head>
@@ -127,7 +75,7 @@ $id_terminal = $_GET['id'];
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <a class="collapse-item" href="register-terminais.php">Terminais</a>
-          <!--<a class="collapse-item" href="register-color.php">Cor do Terminal</a> -->
+            <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
             <a class="collapse-item" href="register-client.php">Cliente</a>
             <a class="collapse-item" href="register-unit.php">Unidade</a>
             <a class="collapse-item" href="register-station.php">Estação</a>
@@ -146,7 +94,7 @@ $id_terminal = $_GET['id'];
           <div class="bg-white py-2 collapse-inner rounded">
             <a class="collapse-item" href="cards.php">Painel</a>
             <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="monitor2.php">Monitoramento</a>
+            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
             <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
           </div>
         </div>
@@ -398,7 +346,7 @@ $id_terminal = $_GET['id'];
         <!-- Begin Page Content -->
         <div class="container-fluid">
           <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800 ">Cadastro Terminal</h1>
+          <h1 class="h3 mb-2 text-gray-800 ">Trocar Senha</h1>
             <div class="col-lg-4">
 
               <div class="card shadow">
@@ -407,27 +355,15 @@ $id_terminal = $_GET['id'];
                   <form class="" id="form1" name="form1" action="" method="post">
                       <div class="">
                         <div class="col-lg-12">
-                         <h6 class="h6 text-gray-800 bold">Número Terminal: <?=$terminal_nr;?></h6>
+                          <input type="hidden" name="idUsuario" id="idUsuario" value=<?=$id_usuario;?>>
                         </div>
+                        
                         <div class="col-lg-12">
-                          <input type="hidden" id="id" name="id" value="<?=$id_terminal;?>">
+                          <input type="password" class="form-control mb-2 mr-sm-2" id="senhaUsuario" name="senhaUsuario" placeholder="Nova Senha">
                         </div>
+                        
                         <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="nome" name="nome" placeholder="Nome Terminal" value="<?=$nome;?>">
-                            <select class="custom-select >" id="selAtivoCor" name= "selAtivoCor">
-                              <option selected>Selecione Cor Ativa</option>
-                              <?=$select;?>
-                            </select>
-                        </div>
-                        <div class="col-lg-12">
-                            <select class="custom-select " id="selInativoCor" name="selInativoCor">
-                              <option selected >Selecione Cor Inativa</option>
-                              <?=$select;?>
-                            </select>
-                        </div>
-                        <div class="col-lg-12">
-                          <input class="btn btn-primary btn-lg btn-block" type="button" name="salvar" value="Salvar" id="salvar" />
-													<input class="btn btn-danger btn-lg btn-block" type="button" name="excluir" value="Excluir" id="excluir" />
+                          <input class="btn btn-success btn-lg btn-block" type="button" name="salvar" value="Salvar" id="salvar" />
                         </div>
                       </div>
                   </form>
@@ -436,6 +372,7 @@ $id_terminal = $_GET['id'];
             </div>
         </div>
 
+      </div>
       <!-- End of Main Content -->
 
       <!-- Footer -->
@@ -497,6 +434,7 @@ $id_terminal = $_GET['id'];
   <!-- Page level custom scripts -->
   <!-- script src="js/demo/datatables-demo.js"></script -->
 
+
 <script type="text/javascript" language="javascript">
    $(document).ready(function() {
         /// Quando usuário clicar em salvar será feito todos os passo abaixo
@@ -506,43 +444,22 @@ $id_terminal = $_GET['id'];
             $.ajax({
                 type: 'POST',
                 dataType: 'json',
-                url: 'update.php',
+                url: 'update-password.php',
                 async: true,
                 data: dados,
                 success: function(data) {
                   alert('Dados enviados com sucesso!');
                     //location.reload();
-                    location.href = 'cards.php';
+                    location.href = 'register-user.php';
                 },
                 error: function(data) {
                     alert('Dados não enviados!');
+                    location.href = 'register-user.php';
                 }
             });
 
             return false;
         });
-
-				$('#excluir').click(function() {
-
-						var dados = $('#form1').serialize();
-						$.ajax({
-								type: 'POST',
-								dataType: 'json',
-								url: 'delete.php',
-								async: true,
-								data: dados,
-								success: function(data) {
-									alert('Dados excluido com sucesso!');
-										//location.reload();
-										location.href = 'cards.php';
-								},
-								error: function(data) {
-										alert('Falha ao excluir dados !');
-								}
-						});
-
-						return false;
-				});
     });
     </script>
 </body>
