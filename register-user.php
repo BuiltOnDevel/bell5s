@@ -34,8 +34,9 @@ $id_terminal = 1;
                         <td>".$r['ts_inclusao_fmt']."</td>
                         <td>".$r['fl_ativo']."</td>
                         <td>
-                            <a href='/.php?id_cor=".$r['id_usuario']."'>Excluir</a> /
-                            <a href='/.php?id_cor=".$r['id_usuario']."'>Trocar Senha</a>
+                            <a href='delete-user.php?id=".$r['id_usuario']."'>Excluir</a> /
+                            <a href='change-password.php?id=".$r['id_usuario']."'>Trocar Senha</a> / 
+                            <a href='change-user.php?id=".$r['id_usuario']."'>Editar</a>
                         </td>
                       </tr>";
         }
@@ -48,6 +49,7 @@ $id_terminal = 1;
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
     }
+    try{
         $sql = "SELECT id_cliente, nome 
                 FROM bel_cliente
                 WHERE fl_ativo = 'S'";
@@ -62,11 +64,41 @@ $id_terminal = 1;
 
         }
 
-    try{
+    
 
     }catch(PDOException $e){
         $retorno->log .= "Error: " . $e->getMessage();
     }
+
+    try{
+      $sql = "SELECT id_unidade, nome 
+              FROM bel_unidade
+              WHERE fl_ativo = 'S'";
+
+      $result = $conn->query($sql);
+      $row = $result->fetchAll();
+
+      $checkbox = "";
+      $temp = 0;
+      foreach($row as $r){
+        $temp++;
+          $checkbox .= '<div class="form-check form-check-inline">
+                           <input class="form-check-input" type="checkbox" nome="cbUnidade" id="cbUnidade" value="'.$r['id_unidade'].'">
+                           <label class="form-check-label" for="cbUnidade">'.$r['nome'].'</label>
+                        </div>';
+                        if($temp == 5){
+                          $checkbox .= "<hr>";
+                          $temp = 0;
+                        }
+                        
+      }
+
+  
+
+  }catch(PDOException $e){
+      $retorno->log .= "Error: " . $e->getMessage();
+  }
+  
 
 
 /*========================================================================
@@ -431,13 +463,16 @@ $id_terminal = 1;
                           <input type="text" class="form-control mb-2 mr-sm-2" id="loginUsuario" name="usuarioLogin" placeholder="Login do usuário">
                         </div>
                         <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="senhaUsuario" name="usuarioSenha" placeholder="Senha do usuário">
+                          <input type="password" class="form-control mb-2 mr-sm-2" id="senhaUsuario" name="usuarioSenha" placeholder="Senha do usuário">
                         </div>
                         <div class="col-lg-12">
                           <select class="custom-select " id="selCliente" name="selCliente">
                             <option selected>Selecione o Cliente</option>
                             <?=$option;?>
                           </select>
+                        </div>
+                        <div class="col-lg-12">
+                           <?= $checkbox;?>
                         </div>
                         <div class="col-lg-12">
                           <input class="btn btn-success btn-lg btn-block" type="button" name="incluir" value="Incluir" id="incluir" />
@@ -557,6 +592,7 @@ $id_terminal = 1;
         $('#incluir').click(function() {
 
             var dados = $('#form1').serialize();
+            console.log(dados);
             $.ajax({
                 type: 'POST',
                 dataType: 'json',
@@ -565,7 +601,6 @@ $id_terminal = 1;
                 data: dados,
                 success: function(data) {
                   alert('Dados enviados com sucesso!');
-                    //location.reload();
                     location.href = 'register-user.php';
                 },
                 error: function(data) {

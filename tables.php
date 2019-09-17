@@ -150,7 +150,7 @@ $retorno->log = '';
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <a class="collapse-item" href="register-terminais.php">Terminais</a>
-            <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
+            <!--<a class="collapse-item" href="register-color.php">Cor do Terminal</a> -->
             <a class="collapse-item" href="register-client.php">Cliente</a>
             <a class="collapse-item" href="register-unit.php">Unidade</a>
             <a class="collapse-item" href="register-station.php">Estação</a>
@@ -169,7 +169,7 @@ $retorno->log = '';
           <div class="bg-white py-2 collapse-inner rounded">
             <a class="collapse-item" href="cards.php">Painel</a>
             <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
+            <a class="collapse-item" href="monitor2.php">Monitoramento</a>
             <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
           </div>
         </div>

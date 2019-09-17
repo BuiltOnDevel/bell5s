@@ -24,7 +24,7 @@ $id_terminal = 1;
                         <td>".$r['cor']."</td>
                         <td style='background-color:".$r['codigo']." ;''>EXEMPLO</td>
                         <td>".$r['fl_ativo']."</td>
-                        <td><a href='/.php?id_cor=".$r['id_cores_terminal']."'>Excluir</a></td>
+                        <td><a href='delete-color.php?id=".$r['id_cores_terminal']."'>Excluir</a></td>
                       </tr>";
 
         }

@@ -29,7 +29,9 @@ $id_terminal = 1;
                         <td>".$r['cliente']."</td>
                         <td>".$r['ts_inclusao_fmt']."</td>
                         <td>".$r['fl_ativo']."</td>
-                        <td><a href='/.php?id_cor=".$r['id_estacao']."'>Excluir</a></td>
+                        <td><a href='delete-station.php?id=".$r['id_estacao']."'>Excluir</a> / 
+                            <a href='change-station.php?id=".$r['id_estacao']."'>Editar</a>
+                        </td>
                       </tr>";
         }
         /*$nome_cor = $row['cor'];
@@ -41,6 +43,7 @@ $id_terminal = 1;
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
     }
+    try{
         $sql = "SELECT id_cliente, nome 
                 FROM bel_cliente
                 WHERE fl_ativo = 'S'";
@@ -55,7 +58,7 @@ $id_terminal = 1;
 
         }
 
-    try{
+    
 
     }catch(PDOException $e){
         $retorno->log .= "Error: " . $e->getMessage();

@@ -3,14 +3,21 @@
 
 <?php
 header("Access-Control-Allow-Origin: *");
+header("Refresh:30");
 include("./json/default.php");
 include("./php/conexao.php");
-// header("Refresh:3");
+include("validate-login.php");
 
 /*============================================================
            PARAMETROS
 ============================================================*/
-$id_cliente_p = 2; // parametro a ser recebido
+$id_cliente_p = $_SESSION['id_cliente_g']; // parametro a ser recebido
+
+/*============================================================
+           configuracao
+============================================================*/
+$exibir_painel = 0; // exibir painel somente de terminais.
+$tituloMenu = 'Todos';
 
 
 /*============================================================
@@ -91,9 +98,14 @@ class Terminal{
 	public $nome = '';
   public $cor = '';
   public $id = '';
+  public $terminal = '';
+  public $ultimo_att = '';
+  public $segundos = '';
 }
 
 
+    
+	              
 foreach( $estacoes as $e ){
 	try {
 		
@@ -102,30 +114,35 @@ foreach( $estacoes as $e ){
          , cor_fundo, terminal_nr
          , ult_botao_ts
          , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-		from bel_monitoramento_vw
+        , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
+		from bel_monitoramento_vw m
 		where cliente_id = " . $id_cliente_p . "
 		  and estacao_id = " . $e->id . "
 		order by terminal";
 		
-		 //print( $sql );
+		// print( "<pre>" . $sql . "</pre>" );
 		 //exit;
+ // print( "<pre>" );
 
 	  $result = $conn->query( $sql );
 	  $rows   = $result->fetchAll();
 	  foreach( $rows as $r )
 	  {
 	  	$t = new Terminal();
-	  	$t->nome = $r['terminal'] . " - " . $r['cor_status'] ;
+	  	$t->nome = $r['terminal'] . "<br>" . $r['segundos'];
 	  	$t->cor = $r['cor_status'];
       $t->id = $r['terminal_id'];
       $t->terminal = $r['terminal_nr'];
       $t->ultimo_att = substr($r['ult_botao_ts'],11);
+      $t->segundos = $r['segundos'];
 
 	  	$e->itens[] = $t;
 	  	
+ //	 print( "\n Nome: " . $t->nome . ", cor: " . $r['cor2'] . " - " . $t->cor . ", id: " . $t->id . ", Segundos: " . $r['segundos'] ) ; 	
+	 
 	  } // leitura de cursor
 
-
+ // print( "</pre>" );
 	} // fim de try
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
@@ -156,8 +173,8 @@ foreach( $estacoes as $e ){
 	{
 	      $print .= "
 	          <div class='card shadow mb-1 col-sm-3'>
-	              <div class='card-body text-white text-center' style='background-color:" . $i->cor . ";'>
-                " . $i->nome . "(" . $i->id . ")
+	              <div class='card-body text-white text-center' 
+	                style='background-color:" . $i->cor . ";'> " . $i->nome . "
                  <a href='update-terminais.php?id=" . $i->id . "'> 
                     <img src='img/svg/issue-reopened.svg'>
                  </a>
@@ -175,13 +192,132 @@ foreach( $estacoes as $e ){
 } // FIM ESTACOES
 
 
-// IMPRIMIR
+// OPCAO ATIVOS
 //=====================================
+if( $_REQUEST['o'] == 'ativos') {
 
+  $tituloMenu = 'Ativos';
+	$exibir_painel = 1;
+	
+	$sql = " 
+	select terminal, terminal_id
+       , cor_fundo, terminal_nr
+       , ult_botao_ts
+       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
+       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
+	from bel_monitoramento_vw m
+	where cliente_id = " . $id_cliente_p . "
+    and bel_chamado_aberto_f( cliente_id, terminal_id  ) <> '00:00:00'
+	order by terminal";
+
+}
+
+
+// OPCAO INATIVOS
+//=====================================
+if( $_REQUEST['o'] == 'inativos') {
+
+  $tituloMenu = 'Inativos';
+	$exibir_painel = 1;
+	
+	$sql = " 
+	select terminal, terminal_id
+       , cor_fundo, terminal_nr
+       , ult_botao_ts
+       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
+       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
+	from bel_monitoramento_vw m
+	where cliente_id = " . $id_cliente_p . "
+    and bel_chamado_aberto_f( cliente_id, terminal_id  ) = '00:00:00'
+	order by terminal";
+
+}
+
+// OPCAO criticos
+//=====================================
+if( $_REQUEST['o'] == 'criticos') {
+
+  $tituloMenu = ' > Tempo';
+	$exibir_painel = 1;
+	
+	$sql = " 
+	select terminal, terminal_id
+       , cor_fundo, terminal_nr
+       , ult_botao_ts
+       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
+       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
+	from bel_monitoramento_vw m
+	where cliente_id = " . $id_cliente_p . "
+    and bel_chamado_aberto_f( cliente_id, terminal_id  ) <> '00:00:00'
+	order by 7 desc";
+
+}
+
+
+
+// FORMATAR LINHAS HTML
+//=====================================
+if( $exibir_painel == 1 ){
+	
+	$linhas = array();
+	
+try {
 	
 
+	
+	// print( "<pre>" . $sql . "</pre>" );
+	 //exit;
+// print( "<pre>" );
+
+  $result = $conn->query( $sql );
+  $rows   = $result->fetchAll();
+  foreach( $rows as $r )
+  {
+  	$t = new Terminal();
+  	$t->nome = $r['terminal'] . "<br>" . $r['segundos'];
+  	$t->cor = $r['cor_status'];
+    $t->id = $r['terminal_id'];
+    $t->terminal = $r['terminal_nr'];
+    $t->ultimo_att = substr($r['ult_botao_ts'],11);
+    $t->segundos = $r['segundos'];
+
+  	$linhas[] = $t;
+  	
+//	 print( "\n Nome: " . $t->nome . ", cor: " . $r['cor2'] . " - " . $t->cor . ", id: " . $t->id . ", Segundos: " . $r['segundos'] ) ; 	
+ 
+  } // leitura de cursor
+
+// print( "</pre>" );
+} // fim de try
+catch(PDOException $e) {
+    $retorno->log .= "Error: " . $e->getMessage();
+}  	
 
 
+
+
+	
+	$print = '';
+		
+	$print .= '<div class="row">';
+	
+	foreach( $linhas as $i )
+	{
+	      $print .= "
+	          <div class='card shadow mb-1 col-sm-3'>
+	              <div class='card-body text-white text-center' 
+	                style='background-color:" . $i->cor . ";'> " . $i->nome . "
+	               <a href='update-terminais.php?id=" . $i->id . "'> 
+	                  <img src='img/svg/issue-reopened.svg'>
+	               </a>
+	              </div>
+	          </div>
+	        ";
+		
+	}
+	$print .= "</div>";	
+
+} 
 
 ?>
 
@@ -216,7 +352,7 @@ foreach( $estacoes as $e ){
     <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
       <!-- Sidebar - Brand -->
-      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
         <div class="sidebar-brand-text mx-3">
             <img src="<?=$urlLogoCliente; ?>" alter="logo" height="55" width="75">
         </div>
@@ -227,7 +363,7 @@ foreach( $estacoes as $e ){
 
       <!-- Nav Item - Dashboard -->
       <li class="nav-item">
-        <a class="nav-link" href="index.html">
+        <a class="nav-link" href="index.php">
           <i class="fas fa-fw fa-tachometer-alt"></i>
           <span>Dashboard</span></a>
       </li>
@@ -244,16 +380,16 @@ foreach( $estacoes as $e ){
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
           <i class="fas fa-fw fa-cog"></i>
-          <span>Cadastro</span>
+          <span>Cadastros</span>
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
-            <a class="collapse-item" href="cards.php">Painel</a>
             <a class="collapse-item" href="register-terminais.php">Terminais</a>
-            <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
-            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
+            <!--<a class="collapse-item" href="register-color.php">Cor do Terminal</a> -->
+            <a class="collapse-item" href="register-client.php">Cliente</a>
+            <a class="collapse-item" href="register-unit.php">Unidade</a>
+            <a class="collapse-item" href="register-station.php">Estação</a>
+            <a class="collapse-item" href="register-user.php">Usuário</a>
           </div>
         </div>
       </li>
@@ -262,15 +398,14 @@ foreach( $estacoes as $e ){
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
           <i class="fas fa-fw fa-wrench"></i>
-          <span>Utilities</span>
+          <span>Monitoração</span>
         </a>
         <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <h6 class="collapse-header">Custom Utilities:</h6>
-            <a class="collapse-item" href="utilities-color.html">Colors</a>
-            <a class="collapse-item" href="utilities-border.html">Borders</a>
-            <a class="collapse-item" href="utilities-animation.html">Animations</a>
-            <a class="collapse-item" href="utilities-other.html">Other</a>
+            <a class="collapse-item" href="cards.php">Painel</a>
+            <a class="collapse-item" href="tables.php">Tabela</a>
+            <a class="collapse-item" href="monitor2.php">Monitoramento</a>
+            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
           </div>
         </div>
       </li>
@@ -518,7 +653,24 @@ foreach( $estacoes as $e ){
           </ul>
         </nav>
         <!-- End of Topbar -->
+        
+        <!-- ############################################### 
+                             M E N U
+             ############################################### -->
 
+
+<div class="d-sm-flex align-items-center justify-content-around mb-4">
+  <h1 class="h3 mb-0 text-gray-800"><?=$tituloMenu; ?></h1>
+  <a href="./monitor2.php" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> TODOS </a>
+  <a href="./monitor2.php?o=ativos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> ATIVOS( por nome ) </a>
+  <a href="./monitor2.php?o=inativos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> INATIVOS </a>
+  <a href="./monitor2.php?o=criticos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> > TEMPO </a>
+</div>
+
+
+        <!-- ############################################### 
+                             P  A  I  N  E  L
+             ############################################### -->
 
             <?=$print; ?>
 

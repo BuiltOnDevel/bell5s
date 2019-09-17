@@ -27,7 +27,9 @@ $id_terminal = 1;
                         <td>".$r['nome']."</td>
                         <td>".$r['ts_inclusao_fmt']."</td>
                         <td>".$r['fl_ativo']."</td>
-                        <td><a href='/.php?id_cor=".$r['id_cliente']."'>Excluir</a></td>
+                        <td><a href='delete-client.php?id=".$r['id_cliente']."'>Excluir</a> / 
+                            <a href='change-client.php?id=".$r['id_cliente']."'>Editar</a>
+                        </td>
                       </tr>";
         }
         /*$nome_cor = $row['cor'];

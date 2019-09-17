@@ -59,9 +59,6 @@
                   <div class="text-center">
                     <a class="small" href="forgot-password.php">Esqueceu a senha?</a>
                   </div>
-                  <div class="text-center">
-                    <a class="small" href="register.html">Criar usuário!</a>
-                  </div>
                 </div>
               </div>
             </div>
