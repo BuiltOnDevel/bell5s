@@ -78,19 +78,10 @@ $id_terminal = 1;
       $result = $conn->query($sql);
       $row = $result->fetchAll();
 
-      $checkbox = "";
-      $temp = 0;
+      $option_unidade = "";
+    
       foreach($row as $r){
-        $temp++;
-          $checkbox .= '<div class="form-check form-check-inline">
-                           <input class="form-check-input" type="checkbox" nome="cbUnidade" id="cbUnidade" value="'.$r['id_unidade'].'">
-                           <label class="form-check-label" for="cbUnidade">'.$r['nome'].'</label>
-                        </div>';
-                        if($temp == 5){
-                          $checkbox .= "<hr>";
-                          $temp = 0;
-                        }
-                        
+          $option_unidade .= "<option value=".$r['id_unidade'].">".$r['nome']."</option>";            
       }
 
   
@@ -471,9 +462,14 @@ $id_terminal = 1;
                             <?=$option;?>
                           </select>
                         </div>
+                        <hr class="sidebar-divider">
                         <div class="col-lg-12">
-                           <?= $checkbox;?>
+                          Selecione as Unidades:
+                          <select multiple class="custom-select " id="selUnidade" name="selUnidade">
+                            <?=$option_unidade;?>
+                          </select>
                         </div>
+
                         <div class="col-lg-12">
                           <input class="btn btn-success btn-lg btn-block" type="button" name="incluir" value="Incluir" id="incluir" />
                         </div>
