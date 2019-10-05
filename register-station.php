@@ -5,6 +5,7 @@
 header("Access-Control-Allow-Origin: *");
 include("./json/default.php");
 include("./php/conexao.php");
+include("./php/classes.php");
 include("validate-login.php");
 $id_terminal = 1;
 
@@ -12,25 +13,28 @@ $id_terminal = 1;
 
 		$sql = "SELECT u.nome
                 , to_char(u.ts_inclusao, 'dd/mm/yyyy') as ts_inclusao_fmt
-                , u.fl_ativo
+                , case when u.fl_ativo = 'S' then 'SIM' else 'NAO' end as fl_ativo_fmt
                 , u.id_estacao
                 , c.nome as cliente
+                , case when u.fl_add_term = 'S' then 'SIM' else 'NAO' end as fl_add_term_fmt
             FROM bel_estacao u 
                , bel_cliente c
-            WHERE u.id_cliente = c.id_cliente
-            ORDER BY u.ts_inclusao DESC";
+            WHERE u.id_cliente = c.id_cliente ";
+     $sql .= ( $usuario->idCliente > 0 ) ? " and c.id_cliente = " . $usuario->idCliente : " ";       
+            $sql .= " ORDER BY u.ts_inclusao DESC";
 
 		    $result = $conn->query( $sql );
         $row   = $result->fetchAll();
-        $td_cor = "";
+        $item = "";
         foreach($row as $r){
-          $td_cor .= "<tr>
+          $item .= "<tr>
                         <td>".$r['nome']."</td>
                         <td>".$r['cliente']."</td>
+                        <td>".$r['fl_add_term_fmt']."</td>
                         <td>".$r['ts_inclusao_fmt']."</td>
-                        <td>".$r['fl_ativo']."</td>
-                        <td><a href='delete-station.php?id=".$r['id_estacao']."'>Excluir</a> / 
-                            <a href='change-station.php?id=".$r['id_estacao']."'>Editar</a>
+                        <td>".$r['fl_ativo_fmt']."</td>
+                        <td>
+                <button class='btn btn-success editar-estacao' type='button' chave='".$r['id_estacao']."' >Editar</button>
                         </td>
                       </tr>";
         }
@@ -43,10 +47,14 @@ $id_terminal = 1;
 	catch(PDOException $e) {
 	    $retorno->log .= "Error: " . $e->getMessage();
     }
-    try{
+    
+//================================================================================
+    try{    
         $sql = "SELECT id_cliente, nome 
                 FROM bel_cliente
-                WHERE fl_ativo = 'S'";
+                WHERE fl_ativo = 'S' ";
+     $sql .= ( $usuario->idCliente > 0 ) ? " and c.id_cliente = " . $usuario->idCliente : " ";       
+         $sql .= "       order by nome";
 
         $result = $conn->query($sql);
         $row = $result->fetchAll();
@@ -58,7 +66,29 @@ $id_terminal = 1;
 
         }
 
-    
+
+    }catch(PDOException $e){
+        $retorno->log .= "Error: " . $e->getMessage();
+    }
+//================================================================================
+    try{    
+        $sql = "SELECT id_unidade, nome 
+                FROM bel_unidade
+                WHERE fl_ativo = 'S'";
+     $sql .= ( $usuario->idCliente > 0 ) ? " and id_cliente = " . $usuario->idCliente : " ";  
+     $sql .= " order by nome";     
+                
+
+        $result = $conn->query($sql);
+        $row = $result->fetchAll();
+
+        $optionUnidade = "";
+
+        foreach($row as $r){
+            $optionUnidade .= "<option value=".$r['id_unidade'].">".$r['nome']."</option>";
+
+        }
+
 
     }catch(PDOException $e){
         $retorno->log .= "Error: " . $e->getMessage();
@@ -114,104 +144,10 @@ $id_terminal = 1;
       <!-- Divider -->
       <hr class="sidebar-divider my-0">
 
-      <!-- Nav Item - Dashboard -->
-      <li class="nav-item">
-        <a class="nav-link" href="index.php">
-          <i class="fas fa-fw fa-tachometer-alt"></i>
-          <span>Dashboard</span></a>
-      </li>
-
-      <!-- Divider -->
-      <hr class="sidebar-divider">
-
-      <!-- Heading -->
-      <div class="sidebar-heading">
-        Interface
-      </div>
-
-      <!-- Nav Item - Pages Collapse Menu -->
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
-          <i class="fas fa-fw fa-cog"></i>
-          <span>Cadastros</span>
-        </a>
-        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="register-terminais.php">Terminais</a>
-            <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
-            <a class="collapse-item" href="register-client.php">Cliente</a>
-            <a class="collapse-item" href="register-unit.php">Unidade</a>
-            <a class="collapse-item" href="register-station.php">Estação</a>
-            <a class="collapse-item" href="register-user.php">Usuário</a>
-          </div>
-        </div>
-      </li>
-
-      <!-- Nav Item - Utilities Collapse Menu -->
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
-          <i class="fas fa-fw fa-wrench"></i>
-          <span>Monitoração</span>
-        </a>
-        <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="cards.php">Painel</a>
-            <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
-            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
-          </div>
-        </div>
-      </li>
+      <? include('menu.php'); ?>
        <!-- Divider -->
        <hr class="sidebar-divider">
 
-      <!-- Heading -->
-      <!--
-      <div class="sidebar-heading">
-        Addons
-      </div>
-      -->
-      <!-- Nav Item - Pages Collapse Menu -->
-      <!--
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true" aria-controls="collapsePages">
-          <i class="fas fa-fw fa-folder"></i>
-          <span>Pages</span>
-        </a>
-        <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            <h6 class="collapse-header">Login Screens:</h6>
-            <a class="collapse-item" href="login.html">Login</a>
-            <a class="collapse-item" href="register.html">Register</a>
-            <a class="collapse-item" href="forgot-password.html">Forgot Password</a>
-            <div class="collapse-divider"></div>
-            <h6 class="collapse-header">Other Pages:</h6>
-            <a class="collapse-item" href="404.html">404 Page</a>
-            <a class="collapse-item" href="blank.html">Blank Page</a>
-          </div>
-        </div>
-      </li>
--->
-      <!-- Nav Item - Charts -->
-      <!--
-      <li class="nav-item">
-        <a class="nav-link" href="charts.html">
-          <i class="fas fa-fw fa-chart-area"></i>
-          <span>Charts</span></a>
-      </li>
--->
-      <!-- Nav Item - Tables -->
-      <!--
-      <li class="nav-item active">
-        <a class="nav-link" href="tables.html">
-          <i class="fas fa-fw fa-table"></i>
-          <span>Tables</span></a>
-      </li>
-       -->
-      <!-- Divider
-      <hr class="sidebar-divider d-none d-md-block">
-         -->
-      <!-- Sidebar Toggler (Sidebar) -->
       <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
       </div>
@@ -407,34 +343,78 @@ $id_terminal = 1;
         <!-- End of Topbar -->
 
         <!-- Begin Page Content -->
-        <div class="container-fluid">
-          <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800 ">Cadastro de Estação</h1>
-            <div class="col-lg-4">
 
-              <div class="card shadow">
-                <div class="card-body ">
-                  <!-- Nested Row within Card Body -->
+        <div class="modal fade" id="form-estacao" role="dialog">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header flexing">
+                  <h1 class="h3 mb-2 text-gray-800 modal-title">Cadastro de Estação</h1>
+                  <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
                   <form class="" id="form1" name="form1" action="" method="post">
+                  	<input type='hidden' name='fldid_estacao' id='fldid_estacao' value='0'>
                       <div class="">
+                      	
                         <div class="col-lg-12">
-                          <input type="text" class="form-control mb-2 mr-sm-2" id="estacaoNome" name="estacaoNome" placeholder="Nome Estação">
+                          <label>Nome</label>
+                          <input type="text" class="form-control mb-2 mr-sm-2" id="fldnome" name="fldnome" placeholder="Nome Estação">
                         </div>
+                        
                         <div class="col-lg-12">
-                          <select class="custom-select " id="selCliente" name="selCliente">
-                            <option selected>Selecione o Cliente</option>
+                          <label>Adicionar Terminais</label>
+													<select id="fldfl_add_term" name="fldfl_add_term" >
+														<option value='S'>SIM</option>
+														<option value='N'>NAO</option>
+													</select>
+												</div>
+
+                      <div class="col-lg-12">
+                        <label>Cliente</label>
+                        <div class="col-lg-12">
+                        	<div class='divSelCliente'>
+                          <select class="custom-select " id="fldid_cliente" name="fldid_cliente">
+                            <option value= '0' selected>Selecione o Cliente</option>
                             <?=$option;?>
                           </select>
                         </div>
+                        </div>
+                      </div>  
+
+                      <div class="col-lg-12">
+                        <label>Unidade</label>
                         <div class="col-lg-12">
+                        	<div class='divSelUnidade'>
+                          <select class="custom-select " id="fldid_unidade" name="fldid_unidade">
+                            <option value= '0' selected>Selecione</option>
+                            <?=$optionUnidade;?>
+                          </select>
+                        </div>
+                        </div>
+                      </div>  
+                        
+                      <div class="col-lg-12">
+                        <label>Ativo</label>
+                        <div class="col-lg-12">
+                        	<div class='divSelAtivo'>
+                          <select class="custom-select " id="fldfl_ativo" name="fldfl_ativo">
+                            <option value= 'S' selected>SIM</option>
+                            <option value= 'N' selected>NAO</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>  
+                        
+                        <div class="col-lg-12" style="margin-top: 10px;">
                           <input class="btn btn-success btn-lg btn-block" type="button" name="incluir" value="Incluir" id="incluir" />
                         </div>
                       </div>
                   </form>
                 </div>
               </div>
+              
             </div>
-        </div>
+          </div>
           <!-- sidebar-divider Content -->
         <hr class="sidebar-divider">
           <!-- Begin Page Content -->
@@ -446,8 +426,13 @@ $id_terminal = 1;
 
           <!-- DataTales Example -->
           <div class="card shadow mb-4">
-            <div class="card-header py-3">
-              <h6 class="m-0 font-weight-bold text-primary">Lista</h6>
+            <div class="card-header py-3 col-md-12 flexing">
+              <div class="col-md-6">
+                  <h4 class="m-0 font-weight-bold text-primary" style="line-height: 38px;">Lista</h4>
+              </div>
+              <div class="col-md-6 text-right">
+                <button class="btn btn-success" type="button" id="nova-estacao">Nova</button>
+              </div>
             </div>
             <div class="card-body">
               <div class="table-responsive">
@@ -457,11 +442,12 @@ $id_terminal = 1;
                     <tr>
                       <th>Nome</th>
                       <th>Cliente</th>
+                      <th>Add Terminais</th>
                       <th>Data Criação</th>
                       <th>Ativo</th>
                       <th>Ação</th>
                     </tr>
-                      <?=$td_cor;?>
+                      <?=$item;?>
                   </thead>
                   <!-- DATA -->
                 </table>
@@ -538,22 +524,92 @@ $id_terminal = 1;
 
 <script type="text/javascript" language="javascript">
    $(document).ready(function() {
+   	
+   	
+$('#nova-estacao').click(
+  function(){
+    $('#fldid_estacao').val(0);
+  	
+  	$('#form-estacao').modal('show');
+  	
+  }
+);   	
+
+
+   	
+   	
+$('.editar-estacao').click(
+  function(){
+  	var idv = $(this).attr('chave');
+
+console.log( idv );
+  var urlv = "./json/estacaoGetById.php";
+      
+  $.post( urlv, { id: idv  }
+      , function( result, statusp ){
+      	
+      	var myObj = JSON.parse( result );
+      	
+
+
+	  if( myObj.mensagem.indexOf("999") != -1 ){
+	  	alert( "Falha", "Falha" );
+	  	 return;
+	  }
+  
+	   var item = JSON.parse( JSON.stringify( myObj.itens[0] ) );
+	   //var item = myObj.itens;
+	   //console.log( "Nome do Usuario:" +  usuario[0].nome );
+	   //console.log( "ID do Usuario:" +  usuario[0].idUsuario );
+	   
+	   $('#fldid_estacao').val( item.id_estacao  );
+	   $('#fldid_cliente').val( item.id_cliente  );
+	   $('#fldnome').val(item.nome );
+	   $('#fldfl_ativo').val( item.fl_ativo );
+	   $('#fldid_unidade').val( item.id_unidade );
+
+	   $('.divSelCliente option[value='+item.id_cliente+']').attr('selected','selected');
+	   $('.divSelUnidade option[value='+item.id_unidade+']').attr('selected','selected');
+	   $('.divSelAtivo option[value='+item.fl_ativo+']').attr('selected','selected');
+	   
+	   $('#incluir').val('Atualizar');
+
+    });
+
+    //=============================================================
+    //=============================================================
+    //=============================================================
+  	
+  	$('#form-estacao').modal('show');
+  	
+  }
+);   	
+
+
+
+
+
+   	
         /// Quando usuário clicar em salvar será feito todos os passo abaixo
         $('#incluir').click(function() {
 
             var dados = $('#form1').serialize();
+            
             $.ajax({
                 type: 'POST',
                 dataType: 'json',
-                url: 'insert-station.php',
+                url: 'estacao-update.php',
                 async: true,
                 data: dados,
                 success: function(data) {
                   alert('Dados enviados com sucesso!');
                     //location.reload();
-                    location.href = 'register-station.php';
+                    console.log( data );
+                  
+                    // location.href = 'register-station.php';
                 },
                 error: function(data) {
+                    console.log( data );
                     alert('Dados não enviados!');
                 }
             });

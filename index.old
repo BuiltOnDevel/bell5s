@@ -1,324 +1,7 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
-
-<?php
-header("Access-Control-Allow-Origin: *");
-header("Refresh:30");
-include("./json/default.php");
-include("./php/conexao.php");
-
-/*============================================================
-           PARAMETROS
-============================================================*/
-$id_cliente_p = 2; // parametro a ser recebido
-
-/*============================================================
-           configuracao
-============================================================*/
-$exibir_painel = 0; // exibir painel somente de terminais.
-$tituloMenu = 'Todos';
-
-
-/*============================================================
-           LER CLIENTE
-============================================================*/
-$urlLogoCliente = '';
-
-try{
-	
-
-		
-		$sql = " 
-		select url_logo
- 		from bel_cliente
-		where id_cliente = " . $id_cliente_p ;
-
-    
-	  $result = $conn->query( $sql );
-	  $rows   = $result->fetchAll();
-	  
-		foreach( $rows as $r)
-		{
-      $urlLogoCliente = $r['url_logo'];
-    } // fim de foreach
-}
-catch(PDOException $e) {
-    $retorno->log .= "Error: " . $e->getMessage();
-}
-	
-	
-	/*============================================================
-	           LER ESTACOES
-	============================================================*/
-
-class Estacao{
-	public $nome = '';
-	public $id = 0;
-	public $itens = array();
-}
-
-
-$estacoes = array(); // lista das estacoes para realizar quebra
-
-	try {
-		
-		$sql = " 
-		select estacao, estacao_id, count(1) as linhas
- 		from bel_monitoramento_vw
-		where cliente_id = " . $id_cliente_p . "
-		  and id_tipo = 1
-		group by estacao, estacao_id
-		order by 1";
-
-    
-	  $result = $conn->query( $sql );
-	  $rows   = $result->fetchAll();
-	  
-		foreach( $rows as $r)
-		{
-			$e = new Estacao();
-			$e->nome = $r['estacao'];
-			$e->id = $r['estacao_id'];
-			
-			$estacoes[] = $e;
-		}
-
-	}
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-	}
-	
-
-	
-	/*============================================================
-	           LER DETALHES
-	============================================================*/
-class Terminal{
-	public $nome = '';
-  public $cor = '';
-  public $id = '';
-  public $terminal = '';
-  public $ultimo_att = '';
-  public $segundos = '';
-}
-
-
-    
-	              
-foreach( $estacoes as $e ){
-	try {
-		
-		$sql = " 
-		select terminal, terminal_id
-         , cor_fundo, terminal_nr
-         , ult_botao_ts
-         , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-        , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-		from bel_monitoramento_vw m
-		where cliente_id = " . $id_cliente_p . "
-		  and estacao_id = " . $e->id . "
-		order by terminal";
-		
-		// print( "<pre>" . $sql . "</pre>" );
-		 //exit;
- // print( "<pre>" );
-
-	  $result = $conn->query( $sql );
-	  $rows   = $result->fetchAll();
-	  foreach( $rows as $r )
-	  {
-	  	$t = new Terminal();
-	  	$t->nome = $r['terminal'] . "<br>" . $r['segundos'];
-	  	$t->cor = $r['cor_status'];
-      $t->id = $r['terminal_id'];
-      $t->terminal = $r['terminal_nr'];
-      $t->ultimo_att = substr($r['ult_botao_ts'],11);
-      $t->segundos = $r['segundos'];
-
-	  	$e->itens[] = $t;
-	  	
- //	 print( "\n Nome: " . $t->nome . ", cor: " . $r['cor2'] . " - " . $t->cor . ", id: " . $t->id . ", Segundos: " . $r['segundos'] ) ; 	
-	 
-	  } // leitura de cursor
-
- // print( "</pre>" );
-	} // fim de try
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-	}  	
-} // ler estacoes
-
-
-
-// FORMATAR LINHAS HTML
-//=====================================
-$print = '';
-
-foreach( $estacoes as $e ){
-	
-	$print .= '<div class="container-fluid">'; // div fluid
-		
-	$print .= "        	
-	<!-- Page Heading -->
-	<h1 class='h3 mb-2 text-gray-800 '> " . $e->nome . " </h1>
-	<p class='mb-4'></p>
-	";
-	
-	// ------------------------------------------------------
-	
-	$print .= '<div class="row">';
-	
-	foreach( $e->itens as $i )
-	{
-	      $print .= "
-	          <div class='card shadow mb-1 col-sm-3'>
-	              <div class='card-body text-white text-center' 
-	                style='background-color:" . $i->cor . ";'> " . $i->nome . "
-                 <a href='update-terminais.php?id=" . $i->id . "'> 
-                    <img src='img/svg/issue-reopened.svg'>
-                 </a>
-	              </div>
-	          </div>
-	        ";
-		
-	}
-	$print .= "</div>";	
-	// ------------------------------------------------------
-	           
-	$print .= '</div>'; // div fluid - fim
-		
-	
-} // FIM ESTACOES
-
-
-// OPCAO ATIVOS
-//=====================================
-if( $_REQUEST['o'] == 'ativos') {
-
-  $tituloMenu = 'Ativos';
-	$exibir_painel = 1;
-	
-	$sql = " 
-	select terminal, terminal_id
-       , cor_fundo, terminal_nr
-       , ult_botao_ts
-       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-	from bel_monitoramento_vw m
-	where cliente_id = " . $id_cliente_p . "
-    and bel_chamado_aberto_f( cliente_id, terminal_id  ) <> '00:00:00'
-	order by terminal";
-
-}
-
-
-// OPCAO INATIVOS
-//=====================================
-if( $_REQUEST['o'] == 'inativos') {
-
-  $tituloMenu = 'Inativos';
-	$exibir_painel = 1;
-	
-	$sql = " 
-	select terminal, terminal_id
-       , cor_fundo, terminal_nr
-       , ult_botao_ts
-       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-	from bel_monitoramento_vw m
-	where cliente_id = " . $id_cliente_p . "
-    and bel_chamado_aberto_f( cliente_id, terminal_id  ) = '00:00:00'
-	order by terminal";
-
-}
-
-// OPCAO criticos
-//=====================================
-if( $_REQUEST['o'] == 'criticos') {
-
-  $tituloMenu = ' > Tempo';
-	$exibir_painel = 1;
-	
-	$sql = " 
-	select terminal, terminal_id
-       , cor_fundo, terminal_nr
-       , ult_botao_ts
-       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-	from bel_monitoramento_vw m
-	where cliente_id = " . $id_cliente_p . "
-    and bel_chamado_aberto_f( cliente_id, terminal_id  ) <> '00:00:00'
-	order by 7 desc";
-
-}
-
-
-
-// FORMATAR LINHAS HTML
-//=====================================
-if( $exibir_painel == 1 ){
-	
-	$linhas = array();
-	
-try {
-	
-
-	
-	// print( "<pre>" . $sql . "</pre>" );
-	 //exit;
-// print( "<pre>" );
-
-  $result = $conn->query( $sql );
-  $rows   = $result->fetchAll();
-  foreach( $rows as $r )
-  {
-  	$t = new Terminal();
-  	$t->nome = $r['terminal'] . "<br>" . $r['segundos'];
-  	$t->cor = $r['cor_status'];
-    $t->id = $r['terminal_id'];
-    $t->terminal = $r['terminal_nr'];
-    $t->ultimo_att = substr($r['ult_botao_ts'],11);
-    $t->segundos = $r['segundos'];
-
-  	$linhas[] = $t;
-  	
-//	 print( "\n Nome: " . $t->nome . ", cor: " . $r['cor2'] . " - " . $t->cor . ", id: " . $t->id . ", Segundos: " . $r['segundos'] ) ; 	
- 
-  } // leitura de cursor
-
-// print( "</pre>" );
-} // fim de try
-catch(PDOException $e) {
-    $retorno->log .= "Error: " . $e->getMessage();
-}  	
-
-
-
-
-	
-	$print = '';
-		
-	$print .= '<div class="row">';
-	
-	foreach( $linhas as $i )
-	{
-	      $print .= "
-	          <div class='card shadow mb-1 col-sm-3'>
-	              <div class='card-body text-white text-center' 
-	                style='background-color:" . $i->cor . ";'> " . $i->nome . "
-	               <a href='update-terminais.php?id=" . $i->id . "'> 
-	                  <img src='img/svg/issue-reopened.svg'>
-	               </a>
-	              </div>
-	          </div>
-	        ";
-		
-	}
-	$print .= "</div>";	
-
-} 
-
-?>
 
 <head>
 
@@ -328,21 +11,21 @@ catch(PDOException $e) {
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>SB Admin 2 - Tables</title>
+  <title>SB Admin 2 - Dashboard</title>
 
-  <!-- Custom fonts for this template -->
+  <!-- Custom fonts for this template-->
   <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
   <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
 
-  <!-- Custom styles for this template -->
+  <!-- Custom styles for this template-->
   <link href="css/sb-admin-2.min.css" rel="stylesheet">
-
-  <!-- Custom styles for this page -->
-  <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
 <body id="page-top">
+<script>
+
+</script>
 
   <!-- Page Wrapper -->
   <div id="wrapper">
@@ -351,18 +34,18 @@ catch(PDOException $e) {
     <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
       <!-- Sidebar - Brand -->
-      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-        <div class="sidebar-brand-text mx-3">
-            <img src="<?=$urlLogoCliente; ?>" alter="logo" height="55" width="75">
-        </div>
-      </a>
+      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+          <div class="sidebar-brand-text mx-3">
+              <img src="img/logo.png" alter="logo" height="55" width="75">
+          </div>
+        </a>
 
       <!-- Divider -->
       <hr class="sidebar-divider my-0">
 
       <!-- Nav Item - Dashboard -->
-      <li class="nav-item">
-        <a class="nav-link" href="index.php">
+      <li class="nav-item active">
+        <a class="nav-link" href="index.html">
           <i class="fas fa-fw fa-tachometer-alt"></i>
           <span>Dashboard</span></a>
       </li>
@@ -379,15 +62,13 @@ catch(PDOException $e) {
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
           <i class="fas fa-fw fa-cog"></i>
-          <span>Cadastro</span>
+          <span>Cadastros</span>
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
             <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
             <a class="collapse-item" href="cards.php">Painel</a>
-            <a class="collapse-item" href="register-terminais.php">Terminais</a>
-            <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
+            <a class="collapse-item" href="#">Terminais</a>
             <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
           </div>
         </div>
@@ -459,6 +140,7 @@ catch(PDOException $e) {
       <!-- Divider 
       <hr class="sidebar-divider d-none d-md-block">
          -->
+
       <!-- Sidebar Toggler (Sidebar) -->
       <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
@@ -650,30 +332,298 @@ catch(PDOException $e) {
                 </a>
               </div>
             </li>
+
           </ul>
+
         </nav>
         <!-- End of Topbar -->
-        
-        <!-- ############################################### 
-                             M E N U
-             ############################################### -->
 
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800"><?=$tituloMenu; ?></h1>
-  <a href="./monitor2.php" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> TODOS </a>
-  <a href="./monitor2.php?o=ativos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> ATIVOS( por nome ) </a>
-  <a href="./monitor2.php?o=inativos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> INATIVOS </a>
-  <a href="./monitor2.php?o=criticos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> > TEMPO </a>
-</div>
+          <!-- Page Heading -->
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
+          </div>
 
+          <!-- Content Row -->
+          <div class="row">
 
-        <!-- ############################################### 
-                             P  A  I  N  E  L
-             ############################################### -->
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Earnings (Monthly)</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">$40,000</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-            <?=$print; ?>
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Earnings (Annual)</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">$215,000</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tasks</div>
+                      <div class="row no-gutters align-items-center">
+                        <div class="col-auto">
+                          <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">50%</div>
+                        </div>
+                        <div class="col">
+                          <div class="progress progress-sm mr-2">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pending Requests Card Example -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Requests</div>
+                      <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                    </div>
+                    <div class="col-auto">
+                      <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Row -->
+
+          <div class="row">
+
+            <!-- Area Chart -->
+            <div class="col-xl-8 col-lg-7">
+              <div class="card shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                  <h6 class="m-0 font-weight-bold text-primary">Earnings Overview</h6>
+                  <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                      <div class="dropdown-header">Dropdown Header:</div>
+                      <a class="dropdown-item" href="#">Action</a>
+                      <a class="dropdown-item" href="#">Another action</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Something else here</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  <div class="chart-area">
+                    <canvas id="myAreaChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="col-xl-4 col-lg-5">
+              <div class="card shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                  <h6 class="m-0 font-weight-bold text-primary">Revenue Sources</h6>
+                  <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                      <div class="dropdown-header">Dropdown Header:</div>
+                      <a class="dropdown-item" href="#">Action</a>
+                      <a class="dropdown-item" href="#">Another action</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Something else here</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  <div class="chart-pie pt-4 pb-2">
+                    <canvas id="myPieChart"></canvas>
+                  </div>
+                  <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-primary"></i> Direct
+                    </span>
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-success"></i> Social
+                    </span>
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-info"></i> Referral
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Row -->
+          <div class="row">
+
+            <!-- Content Column -->
+            <div class="col-lg-6 mb-4">
+
+              <!-- Project Card Example -->
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+                </div>
+                <div class="card-body">
+                  <h4 class="small font-weight-bold">Server Migration <span class="float-right">20%</span></h4>
+                  <div class="progress mb-4">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <h4 class="small font-weight-bold">Sales Tracking <span class="float-right">40%</span></h4>
+                  <div class="progress mb-4">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 40%" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <h4 class="small font-weight-bold">Customer Database <span class="float-right">60%</span></h4>
+                  <div class="progress mb-4">
+                    <div class="progress-bar" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <h4 class="small font-weight-bold">Payout Details <span class="float-right">80%</span></h4>
+                  <div class="progress mb-4">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 80%" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <h4 class="small font-weight-bold">Account Setup <span class="float-right">Complete!</span></h4>
+                  <div class="progress">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Color System -->
+              <div class="row">
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-primary text-white shadow">
+                    <div class="card-body">
+                      Primary
+                      <div class="text-white-50 small">#4e73df</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-success text-white shadow">
+                    <div class="card-body">
+                      Success
+                      <div class="text-white-50 small">#1cc88a</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-info text-white shadow">
+                    <div class="card-body">
+                      Info
+                      <div class="text-white-50 small">#36b9cc</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-warning text-white shadow">
+                    <div class="card-body">
+                      Warning
+                      <div class="text-white-50 small">#f6c23e</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-danger text-white shadow">
+                    <div class="card-body">
+                      Danger
+                      <div class="text-white-50 small">#e74a3b</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                  <div class="card bg-secondary text-white shadow">
+                    <div class="card-body">
+                      Secondary
+                      <div class="text-white-50 small">#858796</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="col-lg-6 mb-4">
+
+              <!-- Illustrations -->
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Illustrations</h6>
+                </div>
+                <div class="card-body">
+                  <div class="text-center">
+                    <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;" src="img/undraw_posting_photo.svg" alt="">
+                  </div>
+                  <p>Add some quality, svg illustrations to your project courtesy of <a target="_blank" rel="nofollow" href="https://undraw.co/">unDraw</a>, a constantly updated collection of beautiful svg images that you can use completely free and without attribution!</p>
+                  <a target="_blank" rel="nofollow" href="https://undraw.co/">Browse Illustrations on unDraw &rarr;</a>
+                </div>
+              </div>
+
+              <!-- Approach -->
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Development Approach</h6>
+                </div>
+                <div class="card-body">
+                  <p>SB Admin 2 makes extensive use of Bootstrap 4 utility classes in order to reduce CSS bloat and poor page performance. Custom CSS classes are used to create custom components and custom utility classes.</p>
+                  <p class="mb-0">Before working with this theme, you should become familiar with the Bootstrap framework, especially the utility classes.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+        <!-- /.container-fluid -->
+
+      </div>
+      <!-- End of Main Content -->
 
       <!-- Footer -->
       <footer class="sticky-footer bg-white">
@@ -726,13 +676,11 @@ catch(PDOException $e) {
   <script src="js/sb-admin-2.min.js"></script>
 
   <!-- Page level plugins -->
-  <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-  <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+  <script src="vendor/chart.js/Chart.min.js"></script>
 
   <!-- Page level custom scripts -->
-  <!-- script src="js/demo/datatables-demo.js"></script -->
-  
-
+  <script src="js/demo/chart-area-demo.js"></script>
+  <script src="js/demo/chart-pie-demo.js"></script>
 
 </body>
 

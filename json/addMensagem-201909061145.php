@@ -4,43 +4,9 @@ include("../json/default.php");
 include("../php/conexao.php");
 
 
+$retorno->log .= $_SERVER['QUERY_STRING']; // obter parametros
 
-$logv = $_SERVER['QUERY_STRING']; // obter parametros
-$retorno->log .= $logv;
-
-// print( json_encode( $retorno ) );
-
-
-
-try {
-		
-	
-	
-		$sql = "
-
-INSERT INTO bel_log(
-            log)
-    VALUES ( '$logv' )";
-	
-	$retorno->log .= $sql;
-	
-	
-	
-		$rs = $conn->prepare($sql);
-		$rs->execute();
-		
-	
-	}
-	catch(PDOException $e) {
-		$retorno->mensagem = "999-falha";
-    $retorno->log .= "ERR:001 LOG Exception: " . $e->getMessage();
-	}
-	
-
-
-//---------
-
-$estacao_p = $_REQUEST['est'];
+$estacao_p = $_REQUEST['estacao'];
 
 class Registro{
  public $id_mensagem = 0;
@@ -55,27 +21,24 @@ class Registro{
  public $terminal_ts = '2019-08-07 23:59:00';
  public $terminal_botao = '';
  public $terminal_motivo = '';
- public $terminal_tipo     = '1';
 
 }
 
 
 $reg = new Registro();
 
-
- $reg->id_mensagem       = 0;
- $reg->mensagem          = 'xxxx';
- $reg->cliente           = $_REQUEST['cli'];
- $reg->unidade           = $_REQUEST['site'];
- $reg->estacao            = $estacao_p;
- $reg->terminal_name       = $_REQUEST['term'];
+ $reg->id_mensagem    = 0;
+ $reg->mensagem       = 'xxxx';
+ $reg->cliente        = $_REQUEST['cli'];
+ $reg->unidade        = $_REQUEST['site'];
+ $reg->estacao          = $estacao_p;
+ $reg->terminal_name       = $_REQUEST['terminal'];
  $reg->terminal_id       = 0;
  $reg->terminal_ts       = $_REQUEST['ts'];
  $reg->terminal_botao          = $_REQUEST['botao'];			
  $reg->terminal_motivo    = $_REQUEST['motivo'];
- $reg->terminal_tipo     = $_REQUEST['tp'];
-
-
+// $reg->inclusao_ts    = '';
+// $reg->inclusao_dt    = '';
 
 //$retorno->log .= "mensagem = " + $reg->mensagem;
 
@@ -143,15 +106,13 @@ INSERT INTO bel_mensagem
 , inclusao_ts, inclusao_dt
 , cliente, unidade, estacao
 , terminal_name, terminal_id, terminal_ts
-, terminal_botao, terminal_motivo
-, terminal_tipo )
+, terminal_botao, terminal_motivo )
 VALUES(
  $reg->id_mensagem, '$reg->mensagem'
  , current_timestamp, current_date
  , '$reg->cliente', '$reg->unidade', '$reg->estacao'
  , '$reg->terminal_name', $reg->terminal_id, '$reg->terminal_ts'
- , '$reg->terminal_botao' , '$reg->terminal_motivo'
- , '$reg->terminal_tipo' )";
+ , '$reg->terminal_botao' , '$reg->terminal_motivo' )";
 	
 	$retorno->log .= $sql;
 	

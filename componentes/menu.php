@@ -1,111 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
 
 <?php
-header("Access-Control-Allow-Origin: *");
-include("./json/default.php");
-include("./php/conexao.php");
-include("./php/classes.php");
-include("validate-login.php");
 
-
-
-	try {
-
-		$sql = "SELECT u.nome
-                , to_char(u.created_at, 'dd/mm/yyyy') as ts_inclusao_fmt
-                , case when u.fl_ativo = 'S' then 'SIM' else 'NAO' end as fl_ativo
-                , u.id_usuario
-                , c.nome as cliente
-                , u.email
-                , u.login
-            FROM bel_usuario u 
-               , bel_cliente c
-            WHERE u.id_cliente = c.id_cliente" ;
-    $sql .= ( $usuario->idCliente == 0)? "" : "  and c.id_cliente = " . $usuario->idCliente;        
-    $sql .= " ORDER BY u.nome DESC";
-
-		    $result = $conn->query( $sql );
-        $row   = $result->fetchAll();
-        $td_cor = "";
-        foreach($row as $r){
-          $td_cor .= "<tr>
-                        <td>".$r['nome']."</td>
-                        <td>".$r['cliente']."</td>
-                        <td>".$r['login']."</td>
-                        <td>".$r['email']."</td>
-                        <td>".$r['ts_inclusao_fmt']."</td>
-                        <td>".$r['fl_ativo']."</td>
-                        <td>
-                            <a href='usuario-edit.php?id=".$r['id_usuario']."'>Editar</a> /
-                            <a href='/.php?id_cor=".$r['id_usuario']."'>Trocar Senha</a>
-                        </td>
-                      </tr>";
-        }
-        /*$nome_cor = $row['cor'];
-        $id_cor = $row['id_cores_terminal'];
-        $codigo = $row['codigo'];
-        $fl_ativo = $row['fl_ativo'];*/
-
-	}
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-    }
-        $sql = "SELECT id_cliente, nome 
-                FROM bel_cliente
-                WHERE fl_ativo = 'S'";
-
-        $result = $conn->query($sql);
-        $row = $result->fetchAll();
-
-        $option = "";
-
-        foreach($row as $r){
-            $option .= "<option value=".$r['id_cliente'].">".$r['nome']."</option>";
-
-        }
-
-    try{
-
-    }catch(PDOException $e){
-        $retorno->log .= "Error: " . $e->getMessage();
-    }
-
-
-/*========================================================================
-                    RETORNO AO CLIENTE
-========================================================================*/
-
-#$retorno->log = '';
-//print( json_encode( $retorno ) );
-
-?>
-
-<head>
-
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="">
-  <meta name="author" content="">
-
-  <title>SB Admin 2 - Tables</title>
-
-  <!-- Custom fonts for this template -->
-  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-
-  <!-- Custom styles for this template -->
-  <link href="css/sb-admin-2.min.css" rel="stylesheet">
-
-  <!-- Custom styles for this page -->
-  <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
-
-</head>
-
-<body id="page-top">
-
-  <!-- Page Wrapper -->
+  echo'  <!-- Page Wrapper -->
   <div id="wrapper">
 
     <!-- Sidebar -->
@@ -113,16 +9,66 @@ include("validate-login.php");
 
       <!-- Sidebar - Brand -->
       <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-        <div class="sidebar-brand-text mx-3">
-            <img src="img/logo.png" alter="logo" height="55" width="75">
-        </div>
-      </a>
+          <div class="sidebar-brand-text mx-3">
+              <img src="img/logo.png" alter="logo" height="55" width="75">
+          </div>
+        </a>
 
+      <!-- Divider -->
       <hr class="sidebar-divider my-0">
-<? include('menu.php'); ?>
+
+      <!-- Nav Item - Dashboard -->
+      <li class="nav-item active">
+        <a class="nav-link" href="index.php">
+          <i class="fas fa-fw fa-tachometer-alt"></i>
+          <span>Dashboard</span></a>
+      </li>
+
       <!-- Divider -->
       <hr class="sidebar-divider">
-      
+
+      <!-- Heading -->
+      <div class="sidebar-heading">
+        Interface
+      </div>
+
+      <!-- Nav Item - Pages Collapse Menu -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+          <i class="fas fa-fw fa-cog"></i>
+          <span>Cadastros</span>
+        </a>
+        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" href="register-terminais.php">Terminais</a>
+            <!--<a class="collapse-item" href="register-color.php">Cor do Terminal</a> -->
+            <a class="collapse-item" href="register-client.php">Cliente</a>
+            <a class="collapse-item" href="register-unit.php">Unidade</a>
+            <a class="collapse-item" href="register-station.php">Estação</a>
+            <a class="collapse-item" href="register-user.php">Usuário</a>
+          </div>
+        </div>
+      </li>
+
+      <!-- Nav Item - Utilities Collapse Menu -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
+          <i class="fas fa-fw fa-wrench"></i>
+          <span>Monitoração</span>
+        </a>
+        <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" href="cards.php">Painel</a>
+            <a class="collapse-item" href="tables.php">Tabela</a>
+            <a class="collapse-item" href="monitor2.php">Monitoramento</a>
+            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
+          </div>
+        </div>
+      </li>
+
+      <!-- Divider -->
+      <hr class="sidebar-divider">
+
       <!-- Heading -->
       <!--
       <div class="sidebar-heading">
@@ -169,6 +115,7 @@ include("validate-login.php");
       <!-- Divider
       <hr class="sidebar-divider d-none d-md-block">
          -->
+
       <!-- Sidebar Toggler (Sidebar) -->
       <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
@@ -268,7 +215,7 @@ include("validate-login.php");
                   </div>
                   <div>
                     <div class="small text-gray-500">December 2, 2019</div>
-                    Spending Alert: We've noticed unusually high spending for your account.
+                    Spending Alert: Weve noticed unusually high spending for your account.
                   </div>
                 </a>
                 <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
@@ -293,7 +240,7 @@ include("validate-login.php");
                     <div class="status-indicator bg-success"></div>
                   </div>
                   <div class="font-weight-bold">
-                    <div class="text-truncate">Hi there! I am wondering if you can help me with a problem I've been having.</div>
+                    <div class="text-truncate">Hi there! I am wondering if you can help me with a problem Ive been having.</div>
                     <div class="small text-gray-500">Emily Fowler · 58m</div>
                   </div>
                 </a>
@@ -313,7 +260,7 @@ include("validate-login.php");
                     <div class="status-indicator bg-warning"></div>
                   </div>
                   <div>
-                    <div class="text-truncate">Last month's report looks great, I am very happy with the progress so far, keep up the good work!</div>
+                    <div class="text-truncate">Last months report looks great, I am very happy with the progress so far, keep up the good work!</div>
                     <div class="small text-gray-500">Morgan Alvarez · 2d</div>
                   </div>
                 </a>
@@ -323,7 +270,7 @@ include("validate-login.php");
                     <div class="status-indicator bg-success"></div>
                   </div>
                   <div>
-                    <div class="text-truncate">Am I a good boy? The reason I ask is because someone told me that people say this to all dogs, even if they aren't good...</div>
+                    <div class="text-truncate">Am I a good boy? The reason I ask is because someone told me that people say this to all dogs, even if they arent good...</div>
                     <div class="small text-gray-500">Chicken the Dog · 2w</div>
                   </div>
                 </a>
@@ -336,172 +283,26 @@ include("validate-login.php");
             <!-- Nav Item - User Information -->
             <li class="nav-item dropdown no-arrow">
               <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Valerie Luna</span>
-                <img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60">
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small text-uppercase">'.$_SESSION['usuario'].'</span>
+                <img class="img-profile rounded-circle" src="../img/avatar.png">
               </a>
               <!-- Dropdown - User Information -->
               <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
                 <a class="dropdown-item" href="#">
                   <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                  Profile
-                </a>
-                <a class="dropdown-item" href="#">
-                  <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                  Settings
-                </a>
-                <a class="dropdown-item" href="#">
-                  <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                  Activity Log
+                  Perfil
                 </a>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                <a class="dropdown-item" href="" data-toggle="modal" data-target="#logoutModal">
                   <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                   Logout
                 </a>
               </div>
             </li>
+
           </ul>
+
         </nav>
-        <!-- End of Topbar -->
-
-
-          <!-- sidebar-divider Content -->
-        <hr class="sidebar-divider">
-          <!-- Begin Page Content -->
-        <div class="container-fluid">
-
-          <!-- Page Heading -->
-          <h1 class="h3 mb-2 text-gray-800">Usuários Cadastrados</h1>
-          <p class="mb-4"></p>
-                        <div class="col-lg-3">
-                          <input class="btn btn-success btn-lg btn-block" type="button" name="novo" value="Novo" id="btnNovo" />
-                        </div>
-          <!-- DataTales Example -->
-          <div class="card shadow mb-4">
-            <div class="card-header py-3">
-              <h6 class="m-0 font-weight-bold text-primary">Lista</h6>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                	
-                  <thead>
-                    <tr>
-                      <th>Nome</th>
-                      <th>Cliente</th>
-                      <th>Login</th>
-                      <th>Email</th>
-                      <th>Data Criação</th>
-                      <th>Ativo</th>
-                      <th>Ação</th>
-                    </tr>
-                      <?=$td_cor;?>
-                  </thead>
-                  <!-- DATA -->
-                </table>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <!-- /.container-fluid -->
-
-      </div>
-      <!-- End of Main Content -->
-
-      <!-- End of Main Content -->
-
-      <!-- Footer -->
-      <footer class="sticky-footer bg-white">
-        <div class="container my-auto">
-          <div class="copyright text-center my-auto">
-            <span>Copyright &copy; Your Website 2019</span>
-          </div>
-        </div>
-      </footer>
-      <!-- End of Footer -->
-
-    </div>
-    <!-- End of Content Wrapper -->
-
-  </div>
-  <!-- End of Page Wrapper -->
-
-  <!-- Scroll to Top Button-->
-  <a class="scroll-to-top rounded" href="#page-top">
-    <i class="fas fa-angle-up"></i>
-  </a>
-
-  <!-- Logout Modal-->
-  <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
-          <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        <div class="modal-body">Você quer mesmo fazer Logout?</div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
-          <a class="btn btn-primary" href="logout.php">Logout</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Bootstrap core JavaScript-->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Core plugin JavaScript-->
-  <!--<script src="vendor/jquery-easing/jquery.easing.min.js"></script>-->
-
-
-  <!-- Custom scripts for all pages-->
-  <script src="js/sb-admin-2.min.js"></script>
-
-  <!-- Page level plugins -->
-  <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-  <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
-  <!-- Page level custom scripts -->
-  <!-- script src="js/demo/datatables-demo.js"></script -->
-
-<script type="text/javascript" language="javascript">
-
-$(document).ready(function() {
-  
-	$('#btnNovo').click(function() { location.href='usuario-edit.php?id=0'; });
-   	
-   	
-        /// Quando usuário clicar em salvar será feito todos os passo abaixo
-        $('#incluir').click(function() {
-
-            var dados = $('#form1').serialize();
-            $.ajax({
-                type: 'POST',
-                dataType: 'json',
-                url: 'insert-user.php',
-                async: true,
-                data: dados,
-                success: function(data) {
-                  alert('Dados enviados com sucesso!');
-                    //location.reload();
-                    location.href = 'register-user.php';
-                },
-                error: function(data) {
-                    alert('Dados não enviados!');
-                    location.href = 'register-user.php';
-                }
-            });
-
-            return false;
-        });
-    });
-    </script>
-</body>
-
-</html>
+        <!-- End of Topbar -->';
+        
+        ?>

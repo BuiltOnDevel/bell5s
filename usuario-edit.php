@@ -3,320 +3,315 @@
 
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Refresh:30");
 include("./json/default.php");
 include("./php/conexao.php");
+include("./php/classes.php");
+include("validate-login.php");
 
-/*============================================================
-           PARAMETROS
-============================================================*/
-$id_cliente_p = 2; // parametro a ser recebido
-
-/*============================================================
-           configuracao
-============================================================*/
-$exibir_painel = 0; // exibir painel somente de terminais.
-$tituloMenu = 'Todos';
+$idp  = $_REQUEST['id']; // id usuario
+$unp = $_REQUEST['un']; // id da unidade
+$cmd = $_REQUEST['cmd']; // acao a ser tomada.
 
 
-/*============================================================
-           LER CLIENTE
-============================================================*/
-$urlLogoCliente = '';
+class Registro{
+	var $id = 0;
+	var $nome = '';
+	var $login = '';
+	var $senha = '';
+	var $email = '';
+	var $idCliente = 0;
+	var $flAtivo = 'S';
+	var $flUsu = 'S';
+}
+
+$reg = new Registro();
+$reg->id = $idp;
+
+
+/*============================================================================
+==========================================================================================*/
+
+if( $cmd == 'newusuario')
+{
+	try {
+		
+ $usuario_nome = $_POST['usuarioNome'];
+ $login_nome = $_POST['usuarioLogin'];
+ $email_nome = $_POST['usuarioEmail'];
+ $senha_nome = $_POST['usuarioSenha'];
+ $cliente_id = $_POST['selCliente'];
+ $reg->flAtivo = $_POST['usuarioAtivo'];
+ $reg->flUsu   = $_POST['usuarioUsu'];
+
+		$sql = "SELECT nextval('bel_usuario_seq') as id";
+//print( $sql ); exit;
+
+    $result = $conn->query( $sql );
+    $row   = $result->fetchAll();
+    $td_cor = "";
+    foreach($row as $r){
+    	
+    	$reg->id   = $r['id'];
+
+
+    }
+
+//------------------------------------------
+
+
+ 	
+  $sql = "insert into bel_usuario
+         (id_usuario, id_cliente
+         , nome, login
+         , email, senha) 
+         values(
+         " . $reg->id . ", $cliente_id
+         ,'$usuario_nome','$login_nome'
+         ,'$email_nome','$senha_nome')";
+         
+	
+			    $result = $conn->query( $sql );
+	
+	}
+		catch(PDOException $e) {
+	    $retorno->log .= "Error: " . $e->getMessage();
+    }
+    
+}
+
+/*============================================================================
+==========================================================================================*/
+
+if( $cmd == 'updusuario')
+{
+	$reg->id = $_POST['usuarioid'];
+
+ $usuario_nome = $_POST['usuarioNome'];
+ $login_nome = $_POST['usuarioLogin'];
+ $email_nome = $_POST['usuarioEmail'];
+ $senha_nome = $_POST['usuarioSenha'];
+ $cliente_id = $_POST['selCliente'];	
+ $reg->flAtivo = $_POST['usuarioAtivo'];
+ $reg->flUsu   = $_POST['usuarioUsu'];
+	
+	
+	try {
+	
+			$sql = "update bel_usuario set
+			    nome   = '$usuario_nome'
+			  , login  = '$login_nome'
+			  , email  = '$email_nome'
+			  , fl_ativo = '" . $reg->flAtivo . "'
+			  , fl_usu   = '" . $reg->flUsu . "'
+			  , id_cliente = $cliente_id
+			where id_usuario = " . $reg->id;
+			
+	
+    $result = $conn->query( $sql );
+	
+	}
+	catch(PDOException $e) {
+    $retorno->log .= "Error: " . $e->getMessage();
+  }
+
+}
+
+
+/*============================================================================
+==========================================================================================*/
+
+if( $cmd == 'newunidade')
+{
+	try {
+	
+			$sql = "insert into bel_usuario_unidade(
+	  id_usuario_unidade, id_cliente, id_usuario, id_unidade )
+	select nextval( 'bel_usuario_unidade_seq')
+	, id_cliente, id_usuario, ".  $unp . "
+	from bel_usuario
+	where id_usuario = " . $idp;
+	
+			    $result = $conn->query( $sql );
+	
+	}
+	catch(PDOException $e) {
+    $retorno->log .= "Error: " . $e->getMessage();
+  }
+    
+}
+
+/*============================================================================
+==========================================================================================*/
+
+
+
+if( $cmd == 'delunidade')
+{
+	try {
+	
+			$sql = "delete from bel_usuario_unidade
+	  where id_unidade = ".  $unp . " and  id_usuario = " . $idp;
+	
+			    $result = $conn->query( $sql );
+	
+	}
+		catch(PDOException $e) {
+	    $retorno->log .= "Error: " . $e->getMessage();
+    }
+    
+}
+
+
+
+/*============================================================================
+==========================================================================================*/
+
+
+
+
+
+
+
+
+	try {
+
+		$sql = "SELECT u.nome
+                , u.email
+                , u.login
+                , u.senha
+                , u.id_cliente
+                , u.id_usuario
+                , u.fl_ativo
+                , u.fl_usu
+            FROM bel_usuario u 
+            WHERE u.id_usuario = " . $reg->id . "
+            ORDER BY u.nome DESC";
+//print( $sql ); exit;
+
+		    $result = $conn->query( $sql );
+        $row   = $result->fetchAll();
+        $td_cor = "";
+        foreach($row as $r){
+        	
+        	$reg->id   = $r['id_usuario'];
+        	$reg->nome = $r['nome'];
+        	$reg->login = $r['login'];
+        	$reg->email = $r['email'];
+        	$reg->senha = $r['senha'];
+        	$reg->idCliente = $r['id_cliente'];
+        	$reg->flAtivo = $r['fl_ativo'];
+        	$reg->flUsu = $r['fl_usu'];
+
+        }
+
+
+
+	}
+	catch(PDOException $e) {
+	    $retorno->log .= "Error: " . $e->getMessage();
+    }
+
+/*
+LISTA DE CLIENTES
+==============================================================*/
 
 try{
-	
+	$sql = "select id_cliente, nome from bel_cliente where fl_ativo = 'S' order by nome";
+  $result = $conn->query($sql);
+  $row = $result->fetchAll();
 
-		
-		$sql = " 
-		select url_logo
- 		from bel_cliente
-		where id_cliente = " . $id_cliente_p ;
+  $option = "";
 
-    
-	  $result = $conn->query( $sql );
-	  $rows   = $result->fetchAll();
-	  
-		foreach( $rows as $r)
-		{
-      $urlLogoCliente = $r['url_logo'];
-    } // fim de foreach
+  foreach($row as $r){
+  	if( $r['id_cliente'] == $reg->idCliente )
+      $option .= "<option value=".$r['id_cliente']." selected>".$r['nome']."</option>";
+
+  	if( $r['id_cliente'] != $reg->idCliente )
+      $option .= "<option value=".$r['id_cliente'].">".$r['nome']."</option>";
+
+  }	
 }
-catch(PDOException $e) {
+catch(PDOException $e){
     $retorno->log .= "Error: " . $e->getMessage();
 }
-	
-	
-	/*============================================================
-	           LER ESTACOES
-	============================================================*/
 
-class Estacao{
-	public $nome = '';
-	public $id = 0;
-	public $itens = array();
+
+
+
+
+/*
+LISTA DE UNIDADES DISPONIVEIS
+==============================================================*/
+
+try{
+	$sql = "select nome, id_unidade
+from bel_unidade u
+where id_cliente = " . $reg->idCliente . " and fl_ativo = 'S' 
+and not exists ( select 1 from bel_usuario_unidade d 
+       where d.id_unidade = u.id_unidade
+         and d.id_usuario = " . $reg->id . " )
+order by nome";
+
+// print( $sql ); exit; 
+	
+  $result = $conn->query($sql);
+  $row = $result->fetchAll();
+
+  $lista1 = "";
+
+  foreach($row as $r){
+  	$lista1 .= "<p><a href='?cmd=newunidade&id=".$reg->id."&un=" . $r['id_unidade'] . "'>" . $r['nome'] . "</a>";
+  }	
 }
-
-
-$estacoes = array(); // lista das estacoes para realizar quebra
-
-	try {
-		
-		$sql = " 
-		select estacao, estacao_id, count(1) as linhas
- 		from bel_monitoramento_vw
-		where cliente_id = " . $id_cliente_p . "
-		  and id_tipo = 1
-		group by estacao, estacao_id
-		order by 1";
-
-    
-	  $result = $conn->query( $sql );
-	  $rows   = $result->fetchAll();
-	  
-		foreach( $rows as $r)
-		{
-			$e = new Estacao();
-			$e->nome = $r['estacao'];
-			$e->id = $r['estacao_id'];
-			
-			$estacoes[] = $e;
-		}
-
-	}
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-	}
-	
-
-	
-	/*============================================================
-	           LER DETALHES
-	============================================================*/
-class Terminal{
-	public $nome = '';
-  public $cor = '';
-  public $id = '';
-  public $terminal = '';
-  public $ultimo_att = '';
-  public $segundos = '';
-}
-
-
-    
-	              
-foreach( $estacoes as $e ){
-	try {
-		
-		$sql = " 
-		select terminal, terminal_id
-         , cor_fundo, terminal_nr
-         , ult_botao_ts
-         , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-        , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-		from bel_monitoramento_vw m
-		where cliente_id = " . $id_cliente_p . "
-		  and estacao_id = " . $e->id . "
-		order by terminal";
-		
-		// print( "<pre>" . $sql . "</pre>" );
-		 //exit;
- // print( "<pre>" );
-
-	  $result = $conn->query( $sql );
-	  $rows   = $result->fetchAll();
-	  foreach( $rows as $r )
-	  {
-	  	$t = new Terminal();
-	  	$t->nome = $r['terminal'] . "<br>" . $r['segundos'];
-	  	$t->cor = $r['cor_status'];
-      $t->id = $r['terminal_id'];
-      $t->terminal = $r['terminal_nr'];
-      $t->ultimo_att = substr($r['ult_botao_ts'],11);
-      $t->segundos = $r['segundos'];
-
-	  	$e->itens[] = $t;
-	  	
- //	 print( "\n Nome: " . $t->nome . ", cor: " . $r['cor2'] . " - " . $t->cor . ", id: " . $t->id . ", Segundos: " . $r['segundos'] ) ; 	
-	 
-	  } // leitura de cursor
-
- // print( "</pre>" );
-	} // fim de try
-	catch(PDOException $e) {
-	    $retorno->log .= "Error: " . $e->getMessage();
-	}  	
-} // ler estacoes
-
-
-
-// FORMATAR LINHAS HTML
-//=====================================
-$print = '';
-
-foreach( $estacoes as $e ){
-	
-	$print .= '<div class="container-fluid">'; // div fluid
-		
-	$print .= "        	
-	<!-- Page Heading -->
-	<h1 class='h3 mb-2 text-gray-800 '> " . $e->nome . " </h1>
-	<p class='mb-4'></p>
-	";
-	
-	// ------------------------------------------------------
-	
-	$print .= '<div class="row">';
-	
-	foreach( $e->itens as $i )
-	{
-	      $print .= "
-	          <div class='card shadow mb-1 col-sm-3'>
-	              <div class='card-body text-white text-center' 
-	                style='background-color:" . $i->cor . ";'> " . $i->nome . "
-                 <a href='update-terminais.php?id=" . $i->id . "'> 
-                    <img src='img/svg/issue-reopened.svg'>
-                 </a>
-	              </div>
-	          </div>
-	        ";
-		
-	}
-	$print .= "</div>";	
-	// ------------------------------------------------------
-	           
-	$print .= '</div>'; // div fluid - fim
-		
-	
-} // FIM ESTACOES
-
-
-// OPCAO ATIVOS
-//=====================================
-if( $_REQUEST['o'] == 'ativos') {
-
-  $tituloMenu = 'Ativos';
-	$exibir_painel = 1;
-	
-	$sql = " 
-	select terminal, terminal_id
-       , cor_fundo, terminal_nr
-       , ult_botao_ts
-       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-	from bel_monitoramento_vw m
-	where cliente_id = " . $id_cliente_p . "
-    and bel_chamado_aberto_f( cliente_id, terminal_id  ) <> '00:00:00'
-	order by terminal";
-
-}
-
-
-// OPCAO INATIVOS
-//=====================================
-if( $_REQUEST['o'] == 'inativos') {
-
-  $tituloMenu = 'Inativos';
-	$exibir_painel = 1;
-	
-	$sql = " 
-	select terminal, terminal_id
-       , cor_fundo, terminal_nr
-       , ult_botao_ts
-       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-	from bel_monitoramento_vw m
-	where cliente_id = " . $id_cliente_p . "
-    and bel_chamado_aberto_f( cliente_id, terminal_id  ) = '00:00:00'
-	order by terminal";
-
-}
-
-// OPCAO criticos
-//=====================================
-if( $_REQUEST['o'] == 'criticos') {
-
-  $tituloMenu = ' > Tempo';
-	$exibir_painel = 1;
-	
-	$sql = " 
-	select terminal, terminal_id
-       , cor_fundo, terminal_nr
-       , ult_botao_ts
-       , bel_terminal_get_status( cliente_id, terminal_id ) as cor_status
-       , bel_chamado_aberto_f( cliente_id, terminal_id  ) segundos
-	from bel_monitoramento_vw m
-	where cliente_id = " . $id_cliente_p . "
-    and bel_chamado_aberto_f( cliente_id, terminal_id  ) <> '00:00:00'
-	order by 7 desc";
-
-}
-
-
-
-// FORMATAR LINHAS HTML
-//=====================================
-if( $exibir_painel == 1 ){
-	
-	$linhas = array();
-	
-try {
-	
-
-	
-	// print( "<pre>" . $sql . "</pre>" );
-	 //exit;
-// print( "<pre>" );
-
-  $result = $conn->query( $sql );
-  $rows   = $result->fetchAll();
-  foreach( $rows as $r )
-  {
-  	$t = new Terminal();
-  	$t->nome = $r['terminal'] . "<br>" . $r['segundos'];
-  	$t->cor = $r['cor_status'];
-    $t->id = $r['terminal_id'];
-    $t->terminal = $r['terminal_nr'];
-    $t->ultimo_att = substr($r['ult_botao_ts'],11);
-    $t->segundos = $r['segundos'];
-
-  	$linhas[] = $t;
-  	
-//	 print( "\n Nome: " . $t->nome . ", cor: " . $r['cor2'] . " - " . $t->cor . ", id: " . $t->id . ", Segundos: " . $r['segundos'] ) ; 	
- 
-  } // leitura de cursor
-
-// print( "</pre>" );
-} // fim de try
-catch(PDOException $e) {
+catch(PDOException $e){
     $retorno->log .= "Error: " . $e->getMessage();
-}  	
+}
 
 
 
+/*
+LISTA DE UNIDADES SELECIONADAS
+==============================================================*/
 
+try{
+	$sql = "select nome, id_unidade
+from bel_unidade u
+where id_cliente = $reg->idCliente and fl_ativo = 'S' 
+and  exists ( select 1 from bel_usuario_unidade d 
+       where d.id_unidade = u.id_unidade
+         and d.id_usuario = $reg->id )
+order by nome";
 	
-	$print = '';
-		
-	$print .= '<div class="row">';
-	
-	foreach( $linhas as $i )
-	{
-	      $print .= "
-	          <div class='card shadow mb-1 col-sm-3'>
-	              <div class='card-body text-white text-center' 
-	                style='background-color:" . $i->cor . ";'> " . $i->nome . "
-	               <a href='update-terminais.php?id=" . $i->id . "'> 
-	                  <img src='img/svg/issue-reopened.svg'>
-	               </a>
-	              </div>
-	          </div>
-	        ";
-		
-	}
-	$print .= "</div>";	
+  $result = $conn->query($sql);
+  $row = $result->fetchAll();
 
-} 
+  $lista2 = "";
+
+  foreach($row as $r){
+  	$lista2 .= "<p><a href='?cmd=delunidade&id=".$reg->id."&un=" . $r['id_unidade'] . "'>" . $r['nome'] . "</a>";
+  }	
+}
+catch(PDOException $e){
+    $retorno->log .= "Error: " . $e->getMessage();
+}
+
+
+
+
+
+/*========================================================================
+                    RETORNO AO CLIENTE
+========================================================================*/
+
+$viewOptionAtivo   = "<option value = 'S' " . ( $reg->flAtivo == 'S' ? 'selected' : '') .  " >SIM</option>";
+$viewOptionAtivo  .= "<option value = 'N' " . ( $reg->flAtivo == 'N' ? 'selected' : '') .  " >NAO</option>";
+
+$viewOptionUsu   = "<option value = 'S' " . ( $reg->flUsu == 'S' ? 'selected' : '') .  " >SIM</option>";
+$viewOptionUsu  .= "<option value = 'N' " . ( $reg->flUsu == 'N' ? 'selected' : '') .  " >NAO</option>";
+
+
+#$retorno->log = '';
+//print( json_encode( $retorno ) );
 
 ?>
 
@@ -353,7 +348,7 @@ catch(PDOException $e) {
       <!-- Sidebar - Brand -->
       <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
         <div class="sidebar-brand-text mx-3">
-            <img src="<?=$urlLogoCliente; ?>" alter="logo" height="55" width="75">
+            <img src="img/logo.png" alter="logo" height="55" width="75">
         </div>
       </a>
 
@@ -379,16 +374,16 @@ catch(PDOException $e) {
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
           <i class="fas fa-fw fa-cog"></i>
-          <span>Cadastro</span>
+          <span>Cadastros</span>
         </a>
         <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="tables.php">Tabela</a>
-            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
-            <a class="collapse-item" href="cards.php">Painel</a>
             <a class="collapse-item" href="register-terminais.php">Terminais</a>
-            <a class="collapse-item" href="register-color.php">Cor do Terminal</a>
-            <a class="collapse-item" href="monitoramento.php">Monitoramento</a>
+            <!--<a class="collapse-item" href="register-color.php">Cor do Terminal</a> -->
+            <a class="collapse-item" href="register-client.php">Cliente</a>
+            <a class="collapse-item" href="register-unit.php">Unidade</a>
+            <a class="collapse-item" href="register-station.php">Estação</a>
+            <a class="collapse-item" href="register-user.php">Usuário</a>
           </div>
         </div>
       </li>
@@ -397,21 +392,19 @@ catch(PDOException $e) {
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
           <i class="fas fa-fw fa-wrench"></i>
-          <span>Utilities</span>
+          <span>Monitoração</span>
         </a>
         <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            <h6 class="collapse-header">Custom Utilities:</h6>
-            <a class="collapse-item" href="utilities-color.html">Colors</a>
-            <a class="collapse-item" href="utilities-border.html">Borders</a>
-            <a class="collapse-item" href="utilities-animation.html">Animations</a>
-            <a class="collapse-item" href="utilities-other.html">Other</a>
+            <a class="collapse-item" href="cards.php">Painel</a>
+            <a class="collapse-item" href="tables.php">Tabela</a>
+            <a class="collapse-item" href="monitor2.php">Monitoramento</a>
+            <a class="collapse-item" href="export-tables.php">Exporta Tabela</a>
           </div>
         </div>
       </li>
-
-      <!-- Divider -->
-      <hr class="sidebar-divider">
+       <!-- Divider -->
+       <hr class="sidebar-divider">
 
       <!-- Heading -->
       <!--
@@ -456,7 +449,7 @@ catch(PDOException $e) {
           <span>Tables</span></a>
       </li>
        -->
-      <!-- Divider 
+      <!-- Divider
       <hr class="sidebar-divider d-none d-md-block">
          -->
       <!-- Sidebar Toggler (Sidebar) -->
@@ -653,27 +646,127 @@ catch(PDOException $e) {
           </ul>
         </nav>
         <!-- End of Topbar -->
-        
-        <!-- ############################################### 
-                             M E N U
-             ############################################### -->
 
+        <!-- Begin Page Content -->
+        <div class="container-fluid">
+          <!-- Page Heading -->
+          <h1 class="h3 mb-2 text-gray-800 ">Cadastro de Usuário</h1>
+            <div class="col-lg-4">
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800"><?=$tituloMenu; ?></h1>
-  <a href="./monitor2.php" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> TODOS </a>
-  <a href="./monitor2.php?o=ativos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> ATIVOS( por nome ) </a>
-  <a href="./monitor2.php?o=inativos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> INATIVOS </a>
-  <a href="./monitor2.php?o=criticos" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> > TEMPO </a>
-</div>
+              <div class="card shadow">
+                <div class="card-body ">
+                  <!-- Nested Row within Card Body -->
+                  <form class="" id="form1" name="form1" action="usuario-edit.php" method="post">
+                  	<input type='hidden' name='usuarioid' value='<?=$reg->id;?>'>
+                      <div class="">
+                        <div class="col-lg-12">
+                          <label>Nome</label>
+                          <input type="text" class="form-control mb-2 mr-sm-2" value='<?=$reg->nome; ?>' id="usuarioNome" name="usuarioNome" placeholder="Nome do Usuário">
+                        </div>
+                        <div class="col-lg-12">
+                          <label>E-Mail</label>
+                          <input type="email" class="form-control mb-2 mr-sm-2"  value='<?=$reg->email; ?>' id="usuarioEmail" name="usuarioEmail" placeholder="Email do usuário">
+                        </div>
+                        <div class="col-lg-12">
+                          <label>Login</label>
+                          <input type="text" class="form-control mb-2 mr-sm-2"  value='<?=$reg->login; ?>' id="loginUsuario" name="usuarioLogin" placeholder="Login do usuário">
+                        </div>
+                        <div class="col-lg-12">
+                          <label>Senha</label>
+                          <input type="text" class="form-control mb-2 mr-sm-2"  value='<?=$reg->senha; ?>' id="senhaUsuario" name="usuarioSenha" placeholder="Senha do usuário">
+                        </div>
 
+                        <div class="col-lg-12">
+                        <label>Usuario</label>
+                          <select class="custom-select " id="usuarioUsu" name="usuarioUsu" >
+                          	<?=$viewOptionUsu; ?>
+                          </select>
+                        </div>
 
-        <!-- ############################################### 
-                             P  A  I  N  E  L
-             ############################################### -->
+                        <div class="col-lg-12">
+                        <label>Ativo</label>
+                          <select class="custom-select " id="usuarioAtivo" name="usuarioAtivo" >
+                          	<?=$viewOptionAtivo; ?>
+                          </select>
+                        </div>
+<!--==============================================================================
+SELECIONAR CLIENTE SE USUARIO LOGADO FOR MASTER 
+ID_CLIENTE == 0 , USUARIO MASTER
+ID_CLIENTE > 0, USUARIO ADMIN
+==============================================================================-->
+ <? if( $usuario->idCliente == 0 ) { ?>                       
+                        <div class="col-lg-12">
+                        <label>Cliente</label>
+                          <select class="custom-select " id="selCliente" name="selCliente" >
+                            <option selected>Selecione o Cliente</option>
+                            <?=$option;?>
+                          </select>
+                        </div>
+<? } ?>                        
+<? if( $usuario->idCliente > 0 ) { ?>    
+  <input type='hidden' name='selCliente' id='selCliente' value='<?=$usuario->idCliente;?>'>                   
+<? } ?>                        
+                         <div class="col-lg-12">
+                        	
+                        	<? if( $reg->id == 0 ) { ?>
+                          <input class="btn btn-success btn-lg btn-block" type="button" name="incluir" value="Incluir" id="incluir" />
+                          <input type='hidden' value='newusuario' name='cmd'>
+                          <? } ?>
+                          
+                        	<? if( $reg->id > 0 ) { ?>
+                          <input class="btn btn-success btn-lg btn-block" type="button" name="btnAtualizar" value="Atualizar" id="btnAtualizar" />
+                          <input type='hidden' value='updusuario' name='cmd'>
+                          <? } ?>
+                        </div>
+                      </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+        </div>
 
-            <?=$print; ?>
+<? if( $reg->id > 0 ) {  ?>        
+          <!-- sidebar-divider Content -->
+        <hr class="sidebar-divider">
+        <div class="container-fluid">
 
+          <!-- Page Heading -->
+          <h1 class="h3 mb-2 text-gray-800"></h1>
+          <p class="mb-4"></p>
+
+          <!-- DataTales Example -->
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">Unidades</h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                	
+                  <thead>
+                    <tr>
+                      <th>Selecionar</th>
+                      <th>Selecionada</th>
+                    </tr>
+                  </thead>
+                  <!-- DATA -->
+                  <tbody>
+                  	<tr>
+                  		<td><?=$lista1;?></td>
+                  		<td><?=$lista2;?></td>
+                  	</tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+<? } ?>        
+      </div>
+      <!-- End of Main Content -->
+
+      <!-- End of Main Content -->
 
       <!-- Footer -->
       <footer class="sticky-footer bg-white">
@@ -706,21 +799,23 @@ catch(PDOException $e) {
             <span aria-hidden="true">×</span>
           </button>
         </div>
-        <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+        <div class="modal-body">Você quer mesmo fazer Logout?</div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-          <a class="btn btn-primary" href="login.html">Logout</a>
+          <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+          <a class="btn btn-primary" href="logout.php">Logout</a>
         </div>
       </div>
     </div>
   </div>
+
 
   <!-- Bootstrap core JavaScript-->
   <script src="vendor/jquery/jquery.min.js"></script>
   <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
   <!-- Core plugin JavaScript-->
-  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+  <!--<script src="vendor/jquery-easing/jquery.easing.min.js"></script>-->
+
 
   <!-- Custom scripts for all pages-->
   <script src="js/sb-admin-2.min.js"></script>
@@ -731,9 +826,62 @@ catch(PDOException $e) {
 
   <!-- Page level custom scripts -->
   <!-- script src="js/demo/datatables-demo.js"></script -->
-  
 
+<script type="text/javascript" language="javascript">
+$(document).ready(function() {
+  /// Quando usuário clicar em salvar será feito todos os passo abaixo
+  $('#incluir').click(function() {
+$('#form1').submit();
+return false;
+      var dados = $('#form1').serialize();
+      $.ajax({
+          type: 'POST',
+          dataType: 'json',
+          url: 'usuario-edit.php',
+          async: true,
+          data: dados,
+          success: function(data) {
+            alert('Dados enviados com sucesso!');
+              //location.reload();
+              location.href = 'usuario-edit.php';
+          },
+          error: function(data) {
+              alert('Dados não enviados!');
+              location.href = 'usuario-edit.php';
+          }
+      });
 
+      return false;
+  });
+  /// Quando usuário clicar em salvar será feito todos os passo abaixo
+  $('#btnAtualizar').click(function() {
+  	
+  	
+$('#form1').submit();
+return false;
+
+      var dados = $('#form1').serialize();
+      $.ajax({
+          type: 'POST',
+          dataType: 'json',
+          url: 'usuario-edit.php',
+          async: true,
+          data: dados,
+          success: function(data) {
+            alert('Dados enviados com sucesso!');
+              //location.reload();
+              location.href = 'usuario-edit.php';
+          },
+          error: function(data) {
+              alert('Dados não enviados!');
+              location.href = 'usuario-edit.php';
+          }
+      });
+
+      return false;
+  });
+});
+</script>
 </body>
 
 </html>
